@@ -37,6 +37,20 @@ npm run preview
 
 The production build is written to `dist/` and can be served by a static web host. `npm run preview` serves it locally for inspection.
 
+## Cloudflare deployment
+
+For **Workers Builds** (a project with a deploy command), use:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Root directory: the repository root
+
+The checked-in `wrangler.jsonc` serves the built `dist/` directory as static assets. No Worker script or Cloudflare Vite plugin is needed. Wrangler is pinned in the development dependencies. For a manual deployment after Cloudflare authentication, run `npm run deploy`.
+
+For **Cloudflare Pages** Git integration, use `npm run build` as the build command and `dist` as the build output directory. Pages uploads that directory automatically; it does not need a Workers deploy command.
+
+See [Cloudflare static assets](https://developers.cloudflare.com/workers/static-assets/) and [Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/).
+
 ## Development
 
 ```sh

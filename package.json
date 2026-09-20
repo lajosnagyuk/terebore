@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --test src/*.test.ts",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "cannon-es": "^0.20.0",
@@ -20,7 +21,8 @@
     "prettier": "^3.9.8",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "wrangler": "4.135.0"
   },
   "description": "A quiet browser game about bouncing colourful balls into a corner.",
   "author": "lajosnagyuk",
