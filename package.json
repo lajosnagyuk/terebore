@@ -8,7 +8,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "tsx --test src/*.test.ts",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "test:coverage": "node --import tsx --test --experimental-test-coverage --test-coverage-include=\"src/*.ts\" --test-coverage-exclude=\"src/*.test.ts\" --test-coverage-lines=95 --test-coverage-branches=95 --test-coverage-functions=90 src/*.test.ts",
+    "test:browser": "npm run build && playwright test",
+    "check": "npm run test:coverage && npm run test:browser",
+    "format:check": "prettier --check src tests scripts playwright.config.ts",
+    "format": "prettier --write src tests scripts playwright.config.ts"
   },
   "dependencies": {
     "cannon-es": "^0.20.0",

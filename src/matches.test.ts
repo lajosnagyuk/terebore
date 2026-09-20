@@ -36,3 +36,48 @@ test("finds independent 3D clusters", () =>
     ).length,
     2,
   ));
+
+test("matching agrees with a connectivity oracle across seeded piles and input orders", () => {
+  let seed = 1729;
+  const random = () =>
+    (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
+  const canonical = (groups: number[][]) =>
+    groups.map((g) => [...g].sort((a, b) => a - b).join(",")).sort();
+  for (let trial = 0; trial < 100; trial++) {
+    const pile = Array.from({ length: 24 }, (_, id) =>
+      ball(
+        id,
+        Math.floor(random() * 3),
+        random() * 2,
+        random() * 2,
+        random() * 2,
+      ),
+    );
+    // Independent transitive-closure oracle rather than another traversal.
+    const connected = pile.map((a) =>
+      pile.map(
+        (b) =>
+          a.color === b.color &&
+          Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= 0.755,
+      ),
+    );
+    for (let k = 0; k < pile.length; k++)
+      for (let i = 0; i < pile.length; i++)
+        for (let j = 0; j < pile.length; j++)
+          connected[i][j] ||= connected[i][k] && connected[k][j];
+    const expected = [
+      ...new Set(
+        connected.map((row) =>
+          row.flatMap((yes, id) => (yes ? [id] : [])).join(","),
+        ),
+      ),
+    ]
+      .map((s) => s.split(",").map(Number))
+      .filter((g) => g.length >= 3);
+    assert.deepEqual(canonical(findMatches(pile, 0.72)), canonical(expected));
+    assert.deepEqual(
+      canonical(findMatches([...pile].reverse(), 0.72)),
+      canonical(expected),
+    );
+  }
+});

@@ -30,7 +30,10 @@ try {
       geometry,
       createMarbleMaterial(palette[0].color, 0.5),
     );
-    const back = new THREE.Mesh(geometry, createMarbleMaterial(palette[1].color, 0.5));
+    const back = new THREE.Mesh(
+      geometry,
+      createMarbleMaterial(palette[1].color, 0.5),
+    );
     // Touching, partially overlapping spheres viewed from the front.
     back.position.set(0.6, 0, -Math.sqrt(4 - 0.36));
     scene.add(back, front);

@@ -4,12 +4,18 @@
 
 ```sh
 npm ci
-npm test
-npm run build
 npx playwright install chromium
+npm run check
+npm run format:check
 ```
 
-With `npm run dev` running on port 5173, run the browser checks:
+`npm run check` runs instrumented unit tests, a production build, and Playwright against isolated development and production servers on ports 5174 and 4174. GitHub Actions runs the same checks with software-rendered Chromium and validates the Wrangler deployment bundle without publishing. Failed browser runs retain traces and screenshots in `test-results/` and an HTML report in `playwright-report/`.
+
+Unit coverage has minimum gates of 95% lines, 95% branches, and 90% functions. It measures the modules imported by the unit suite, **not the whole application**: aiming, matching and its lifecycle, cadence/scoring, input coordinates, persistence, adaptive resolution, room physics, and pooled mist. Browser tests cover integration through real controls: mouse, keyboard, touch, interruption, dialogs, reset, storage failures, committed matches, reduced motion, and production assets. A seeded connectivity oracle also checks matching across 100 generated piles and reversed input order. Deterministic match fixtures replace the starting pile only in test-browser responses; production has no mutation hooks.
+
+Chromium touch emulation does not replace testing on a physical phone or Safari. Rendering quality and frame-rate claims require the hardware checks below; CI software rendering tests correctness only.
+
+With `npm run dev` running on port 5173, additional rendering and longer gameplay checks are available:
 
 ```sh
 node scripts/check-browser.mjs
@@ -33,6 +39,9 @@ Open `/?stats` to display frame rate and canvas resolution. Development builds e
 | `src/room-feel.ts` | Room incline, gravity, and release position |
 | `src/cadence.ts` | Throw readiness and scoring bonuses |
 | `src/matches.ts` | Connected groups of touching, same-colour balls |
+| `src/match-lifecycle.ts` | Contact dwell, one-time match commitment, and delayed clearing |
+| `src/input.ts` | Validated pointer coordinates and touch offset |
+| `src/persistence.ts` | Validated best-score storage with failure recovery |
 | `src/palette.ts` | Five distinct colour families |
 | `src/marble-art.ts` | Cloudy shell shading and contact-shadow texture |
 | `src/room-art.ts` | Painted room lighting |
@@ -55,3 +64,5 @@ Sleeping shadow transforms and unchanged interface text are cached. Match mist u
 ## Assets and storage
 
 Artwork, textures, and audio are procedural. Google Fonts are optional and have system-font fallbacks. Audio starts only when enabled. The only persistent game value is the personal best, stored locally in the browser; storage failures do not prevent play.
+
+See [Reliability review](review.md) for the addressed findings and remaining verification limits.

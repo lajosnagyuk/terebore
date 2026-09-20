@@ -4,6 +4,9 @@ import * as CANNON from "cannon-es";
 import { createMarbleMaterial, contactTexture } from "./marble-art";
 import { AdaptiveQuality } from "./quality";
 import { findMatches } from "./matches";
+import { MatchLifecycle } from "./match-lifecycle";
+import { loadBest, saveBest } from "./persistence";
+import { pointerAim } from "./input";
 import "./style.css";
 import { roomMaterial } from "./room-art";
 import { throwReadiness, clearScore, nextChain } from "./cadence";
@@ -39,13 +42,8 @@ const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
 if (matchMedia("(hover: none)").matches)
   $("#hint").textContent = "Drag to aim · release to throw";
-let score = 0,
-  best = 0;
-try {
-  best = Number(localStorage.getItem("terebore-best")) || 0;
-} catch {
-  /* Storage may be disabled. */
-}
+let score = 0;
+let best = loadBest(() => localStorage);
 $("#best").textContent = String(best);
 const scene = new THREE.Scene();
 const room = new THREE.Group();
@@ -350,7 +348,7 @@ function playTone(freq: number, volume = 0.035, duration = 0.15) {
   if (muted) return;
   try {
     audio ??= new AudioContext();
-    void audio.resume();
+    void audio.resume().catch(() => {});
     const osc = audio.createOscillator(),
       gain = audio.createGain();
     osc.type = "sine";
@@ -364,6 +362,10 @@ function playTone(freq: number, volume = 0.035, duration = 0.15) {
     osc.connect(gain).connect(audio.destination);
     osc.start();
     osc.stop(audio.currentTime + duration);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
   } catch {
     /* Audio is optional. */
   }
@@ -379,7 +381,7 @@ function playShellImpact(
   if (muted) return;
   try {
     audio ??= new AudioContext();
-    void audio.resume();
+    void audio.resume().catch(() => {});
     const now = audio.currentTime;
     const pitch = 1 + (color - 2) * 0.012;
     const fundamental = (ballContact ? 290 : 235) * pitch;
@@ -408,6 +410,8 @@ function playShellImpact(
   }
 }
 let lastSound = 0;
+let hintTimer: ReturnType<typeof setTimeout> | undefined;
+let chordTimer: ReturnType<typeof setTimeout> | undefined;
 function addBall(color: number, position: THREE.Vector3) {
   const body = new CANNON.Body({
     mass: 1,
@@ -526,7 +530,8 @@ function throwBall() {
   playTone(330, 0.018, 0.15);
   aimDirty = true;
   $("#hint").textContent = "A little bounce. A little breath.";
-  setTimeout(() => {
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => {
     $("#hint").textContent = aiming
       ? `Click to bounce · ${target.surface}`
       : lastPointerType === "touch"
@@ -764,8 +769,7 @@ function showScoreToken(
     toastMotion.onfinish = dismissToast;
   }, 4200);
 }
-const pendingMatches = new Map<string, number>();
-let celebrations: { ids: number[]; at: number }[] = [];
+const matchLifecycle = new MatchLifecycle();
 let lastClear = -10,
   chain = 0;
 let shotSerial = 0,
@@ -776,10 +780,17 @@ type Ripple = {
 };
 const rippleGeometry = new THREE.RingGeometry(0.86, 1, 48);
 let ripples: Ripple[] = [];
-function clearGroup(matched: Ball[]) {
-  if (!matched.length) return;
-  chain = nextChain(chain, elapsed - lastClear, shotSerial === lastClearShot);
-  lastClearShot = shotSerial;
+function clearGroup(matched: Ball[], originatingShot: number) {
+  if (matched.length < 3) {
+    for (const ball of matched) ball.clearingAt = -1;
+    return;
+  }
+  chain = nextChain(
+    chain,
+    elapsed - lastClear,
+    originatingShot === lastClearShot,
+  );
+  lastClearShot = originatingShot;
   lastClear = elapsed;
   const banked = matched.some((b) => b.banked);
   const centre = new THREE.Vector3();
@@ -819,9 +830,7 @@ function clearGroup(matched: Ball[]) {
   if (score > best) {
     best = score;
     $("#best").textContent = String(best);
-    try {
-      localStorage.setItem("terebore-best", String(best));
-    } catch {}
+    saveBest(best, () => localStorage);
   }
   for (const b of matched) {
     puff(b);
@@ -830,7 +839,8 @@ function clearGroup(matched: Ball[]) {
   // Removing supports must wake the pile so suspended marbles fall.
   for (const remaining of balls) remaining.body.wakeUp();
   playTone(523, 0.045, 0.6);
-  setTimeout(() => playTone(784, 0.025, 0.7), 100);
+  clearTimeout(chordTimer);
+  chordTimer = setTimeout(() => playTone(784, 0.025, 0.7), 100);
   showScoreToken(points, matched.length, banked, screen);
 }
 function checkMatches() {
@@ -846,29 +856,20 @@ function checkMatches() {
       })),
     radius * 2,
   );
-  const active = new Set<string>();
-  for (const group of groups) {
-    const key = group.sort((a, b) => a - b).join(",");
-    active.add(key);
-    if (!pendingMatches.has(key)) pendingMatches.set(key, elapsed);
-    if (elapsed - pendingMatches.get(key)! < 0.16) continue;
-    for (const b of balls)
-      if (group.includes(b.body.id)) b.clearingAt = elapsed;
-    celebrations.push({ ids: group, at: elapsed });
+  for (const group of matchLifecycle.observe(groups, elapsed, shotSerial)) {
+    for (const ball of balls)
+      if (group.ids.includes(ball.body.id)) ball.clearingAt = elapsed;
     playTone(660, 0.025, 0.22);
   }
-  for (const key of pendingMatches.keys())
-    if (!active.has(key)) pendingMatches.delete(key);
 }
 
 function dialogOpen() {
   return !!document.querySelector("dialog[open]");
 }
-let drag: { id: number } | null = null;
+let drag: { id: number; width: number; height: number } | null = null;
 let lastPointerType = "mouse";
 const surface = $("#world");
 // Touch aims above the fingertip; the same mapping is used on release.
-const touchAimOffset = 84;
 const touchFeedback = document.createElementNS(
   "http://www.w3.org/2000/svg",
   "svg",
@@ -883,10 +884,19 @@ const touchRing = touchFeedback.querySelector("circle")!;
 const touchTargetScreen = new THREE.Vector3();
 function aimFromPointer(e: PointerEvent) {
   const touch = e.pointerType === "touch";
-  aimAt(
+  const point = pointerAim(
     e.clientX,
-    touch ? Math.max(20, e.clientY - touchAimOffset) : e.clientY,
+    e.clientY,
+    touch,
+    innerWidth,
+    innerHeight,
   );
+  if (!point) {
+    hasTarget = false;
+    cancelDrag();
+    return;
+  }
+  aimAt(point.x, point.y);
   touchFeedback.classList.toggle("visible", touch && hasTarget);
   if (!touch || !hasTarget) return;
   touchTargetScreen
@@ -910,10 +920,10 @@ function aimFromPointer(e: PointerEvent) {
 }
 
 surface.addEventListener("pointerdown", (e) => {
-  if (e.button !== 0 || !e.isPrimary || dialogOpen()) return;
+  if (e.button !== 0 || !e.isPrimary || drag || dialogOpen()) return;
   lastPointerType = e.pointerType;
   surface.focus({ preventScroll: true });
-  drag = { id: e.pointerId };
+  drag = { id: e.pointerId, width: innerWidth, height: innerHeight };
   $(".hand-label").style.opacity = "0";
   surface.setPointerCapture(e.pointerId);
   aimFromPointer(e);
@@ -931,6 +941,11 @@ function cancelDrag() {
 }
 surface.addEventListener("pointerup", (e) => {
   if (!drag || e.pointerId !== drag.id) return;
+  // A resize event may arrive after pointerup during rotation or viewport changes.
+  if (drag.width !== innerWidth || drag.height !== innerHeight) {
+    cancelDrag();
+    return;
+  }
   aimFromPointer(e);
   drag = null;
   $(".hand-label").style.opacity = "";
@@ -941,10 +956,13 @@ surface.addEventListener("pointerup", (e) => {
 surface.addEventListener("pointerleave", () => {
   if (!drag) drawAim(false);
 });
-surface.addEventListener("pointercancel", cancelDrag);
-surface.addEventListener("lostpointercapture", () => {
-  if (drag) cancelDrag();
+surface.addEventListener("pointercancel", (e) => {
+  if (drag?.id === e.pointerId) cancelDrag();
 });
+surface.addEventListener("lostpointercapture", (e) => {
+  if (drag?.id === e.pointerId) cancelDrag();
+});
+window.addEventListener("blur", cancelDrag);
 window.addEventListener("keydown", (e) => {
   if (dialogOpen() || e.target instanceof HTMLButtonElement) return;
   if (e.code === "Escape") {
@@ -958,6 +976,7 @@ window.addEventListener("keydown", (e) => {
   ) {
     e.preventDefault();
     if (e.code === "Space") {
+      if (e.repeat) return;
       throwBall();
       drawAim(true);
     } else {
@@ -1005,8 +1024,13 @@ $("#confirm-reset").onclick = () => {
   for (const b of [...balls]) removeBall(b);
   mist.clear();
   document.body.classList.remove("playing");
-  pendingMatches.clear();
-  celebrations = [];
+  matchLifecycle.reset();
+  clearTimeout(hintTimer);
+  clearTimeout(chordTimer);
+  $("#hint").textContent =
+    lastPointerType === "touch"
+      ? "Drag to aim · release to throw"
+      : "Point to aim · click to throw";
   lastClear = -10;
   chain = 0;
   shotSerial = 0;
@@ -1043,6 +1067,7 @@ let handLift = 0;
 let handBaseScale = 0.38;
 let handAvailability = 1;
 function resize() {
+  if (drag) cancelDrag();
   dismissToast();
   camera.aspect = innerWidth / innerHeight;
   camera.fov = innerWidth < 640 ? 53 : 40;
@@ -1106,11 +1131,11 @@ function frame(now: number) {
   if (!dialogOpen()) {
     elapsed += dt;
     world.step(1 / 90, dt, 6);
-    for (const celebration of [...celebrations]) {
-      if (elapsed - celebration.at >= 0.3) {
-        clearGroup(balls.filter((b) => celebration.ids.includes(b.body.id)));
-        celebrations = celebrations.filter((c) => c !== celebration);
-      }
+    for (const celebration of matchLifecycle.takeReady(elapsed)) {
+      clearGroup(
+        balls.filter((b) => celebration.ids.includes(b.body.id)),
+        celebration.shot,
+      );
     }
     for (const r of [...ripples]) {
       r.age += dt;
@@ -1262,7 +1287,7 @@ if (import.meta.env.DEV)
       next,
       elapsed,
       cadence: { ready: readyToThrow(), age: elapsed - lastThrow },
-      celebrations: celebrations.length,
+      celebrations: matchLifecycle.size,
       palette: palette.map((p) => ({ name: p.name, color: p.color })),
       release: { position: throwOrigin.toArray() },
       targeting: {

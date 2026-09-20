@@ -54,8 +54,11 @@ See [Cloudflare static assets](https://developers.cloudflare.com/workers/static-
 ## Development
 
 ```sh
-npm test
+npx playwright install chromium
+npm run check
 ```
+
+Run `npm test` for the faster unit suite alone.
 
 Terebore uses TypeScript, Three.js, and cannon-es. Artwork, textures, and sounds are generated in code. Adaptive render resolution keeps the game lightweight on integrated graphics while the interface stays sharp. A modern browser with WebGL 2 is required; sound is optional, and reduced-motion preferences are respected by interface transitions.
 
