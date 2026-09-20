@@ -1,0 +1,573 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;600;650;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #454a42;
+  background: #eeeae2;
+  font-synthesis: none;
+  font-weight: 400;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  overflow: hidden;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 2px solid #7b8e6d;
+  outline-offset: 5px;
+}
+#world {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+  cursor: grab;
+}
+#world:active {
+  cursor: grabbing;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.ui {
+  position: relative;
+  height: 100dvh;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ui button,
+.ui dialog {
+  pointer-events: auto;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 42px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  position: relative;
+}
+.brand-mark i {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #83947d;
+  box-shadow: inset -2px -2px 3px #0001;
+}
+.brand-mark i:nth-child(1) {
+  left: 0;
+  top: 0;
+  background: #d7a4a7;
+}
+.brand-mark i:nth-child(2) {
+  left: 15px;
+  top: 7px;
+  background: #a9b799;
+}
+.brand-mark i:nth-child(3) {
+  left: 2px;
+  top: 16px;
+  background: #aaa7c7;
+}
+.wordmark {
+  font-family: Manrope, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+}
+.edition {
+  border-left: 1px solid #b4b5aa77;
+  padding-left: 18px;
+  margin-left: 8px;
+  font-size: 10px;
+  letter-spacing: 2.2px;
+  color: #8a8d81;
+}
+.scoreboard {
+  display: flex;
+  gap: 30px;
+  text-align: right;
+}
+.eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #85877b;
+  font-weight: 600;
+}
+.score {
+  font-family: Manrope, sans-serif;
+  font-size: 29px;
+  letter-spacing: -1px;
+  margin-top: 3px;
+  font-weight: 500;
+}
+.best .score {
+  color: #98998c;
+}
+.intro {
+  position: absolute;
+  left: 43px;
+  top: 155px;
+}
+.intro .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-dot {
+  width: 5px;
+  height: 5px;
+  background: #8a9e75;
+  border-radius: 50%;
+}
+h1 {
+  font-family: Manrope, sans-serif;
+  font-weight: 500;
+  font-size: clamp(26px, 3vw, 43px);
+  letter-spacing: -1.9px;
+  line-height: 1.27;
+  margin: 17px 0;
+}
+.intro p {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #85867a;
+}
+.toolbar {
+  position: absolute;
+  right: 42px;
+  top: 155px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #8b8d791f;
+  background: #faf9f33d;
+  border-radius: 50%;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.icon-btn:hover {
+  background: #fff9;
+  transform: translateY(-2px);
+}
+.icon-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bottom {
+  position: absolute;
+  bottom: 32px;
+  left: 42px;
+  right: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.pocket {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 15px 22px 15px 16px;
+  background: #faf9f266;
+  border: 1px solid #ffffff75;
+  border-radius: 18px;
+  box-shadow: 0 6px 25px #635d4310;
+  backdrop-filter: blur(12px);
+}
+.pocket-ball {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 32% 25%, #fff5, transparent 40%),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 49%,
+      #fff4 60%,
+      transparent 69%
+    ),
+    radial-gradient(
+      circle at 46% 41%,
+      var(--ball) 30%,
+      var(--dark) 74%,
+      var(--ball) 87%
+    );
+  box-shadow:
+    inset -4px -5px 8px #38333122,
+    0 5px 8px #50483215;
+}
+.pocket-text {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #696e61;
+}
+.footer-note {
+  color: #919386;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.footer-note span {
+  color: #b5a884;
+  margin-right: 7px;
+}
+.instructions {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+.instructions strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: #646b5b;
+}
+.instructions p {
+  font-size: 10px;
+  color: #939588;
+  margin: 8px 0 0;
+  letter-spacing: 0.5px;
+}
+.hand-label {
+  position: absolute;
+  bottom: 182px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #898d7e;
+}
+.gesture {
+  display: none;
+  height: 29px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.gesture svg {
+  width: 22px;
+  height: 29px;
+  fill: none;
+  stroke: #69725e;
+  stroke-width: 1.2;
+}
+.toast {
+  position: absolute;
+  top: 39%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  opacity: 0;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.8;
+  color: #647657;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.toast strong {
+  font-size: 29px;
+  font-weight: 500;
+}
+.toast div {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.power {
+  position: absolute;
+  bottom: 188px;
+  left: 50%;
+  width: 64px;
+  height: 3px;
+  border-radius: 3px;
+  background: #8c937522;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+.power.active {
+  opacity: 1;
+}
+.power i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #899a75;
+  border-radius: 3px;
+}
+dialog {
+  border: 1px solid #fff;
+  background: #f6f4edee;
+  color: #454a42;
+  border-radius: 24px;
+  padding: 36px;
+  max-width: 380px;
+  box-shadow: 0 20px 100px #343d3122;
+  backdrop-filter: blur(18px);
+}
+dialog::backdrop {
+  background: #5e67532b;
+  backdrop-filter: blur(5px);
+}
+dialog h2 {
+  font-family: Manrope, sans-serif;
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -1px;
+  margin: 0 0 18px;
+}
+dialog p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #7b8172;
+}
+dialog button {
+  border: 0;
+  border-radius: 30px;
+  background: #7f9272;
+  color: white;
+  padding: 12px 22px;
+  margin-top: 12px;
+}
+.match-dots {
+  display: flex;
+  gap: 7px;
+  margin: 22px 0;
+}
+.match-dots i {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d6a0ab;
+}
+.key {
+  font-size: 11px !important;
+  border-top: 1px solid #8a8d791f;
+  padding-top: 15px;
+}
+.hidden {
+  display: none !important;
+}
+@media (max-width: 640px) {
+  header {
+    padding: 24px;
+  }
+  .wordmark {
+    font-size: 23px;
+  }
+  .edition {
+    display: none;
+  }
+  .scoreboard {
+    gap: 18px;
+  }
+  .score {
+    font-size: 24px;
+  }
+  .eyebrow {
+    font-size: 9px;
+  }
+  .intro {
+    left: 24px;
+    top: 124px;
+  }
+  .intro h1 {
+    font-size: 29px;
+    letter-spacing: -1.3px;
+  }
+  .intro p {
+    font-size: 11px;
+  }
+  .toolbar {
+    right: 24px;
+    top: 127px;
+  }
+  .bottom {
+    left: 20px;
+    right: 20px;
+    bottom: 24px;
+  }
+  .pocket {
+    padding: 11px;
+    gap: 10px;
+    border-radius: 15px;
+  }
+  .pocket-ball {
+    width: 32px;
+    height: 32px;
+  }
+  .pocket .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .pocket-text {
+    font-size: 10px;
+  }
+  .footer-note {
+    display: none;
+  }
+  .instructions {
+    bottom: 103px;
+  }
+  .hand-label {
+    bottom: 214px;
+  }
+  .power {
+    bottom: 230px;
+  }
+  .gesture {
+    display: none;
+  }
+  .toast {
+    top: 42%;
+  }
+}
+
+/* Confident toy-box colours, with a quiet paper-and-wood room around them. */
+.brand-mark i:nth-child(1) {
+  background: #f05282;
+}
+.brand-mark i:nth-child(2) {
+  background: #009bbe;
+}
+.brand-mark i:nth-child(3) {
+  background: #72c83f;
+}
+.match-dots i {
+  background: #f05282;
+}
+#world:focus {
+  outline: none;
+}
+#world:focus-visible {
+  box-shadow: inset 0 0 0 2px #71947766;
+}
+.performance {
+  position: fixed;
+  bottom: 12px;
+  right: 20px;
+  font: 11px monospace;
+  color: #4b5747;
+  background: #fff9;
+  padding: 5px 9px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* UI surfaces stay crisp and screen-aligned; room outlines follow 3D geometry. */
+.pocket {
+  border: 1px solid #767b6266;
+  box-shadow: 0 5px 20px #635d4310;
+  background: #faf9f2c7;
+}
+.pocket-ball {
+  border: 1.5px solid var(--dark);
+}
+.icon-btn {
+  border-color: #767b6270;
+  background: #faf9f28c;
+}
+dialog {
+  border-color: #767b6280;
+}
+.brand-mark i,
+.match-dots i {
+  border: 1px solid #454a423d;
+}
+.power {
+  border: 1px solid #68745c66;
+  height: 5px;
+}
+
+.power.active {
+  bottom: 260px;
+}
+@media (max-width: 640px) {
+  .power.active {
+    bottom: 272px;
+  }
+}
+
+#world {
+  cursor: crosshair;
+}
+#world:active {
+  cursor: crosshair;
+}
+
+.toast {
+  padding: 9px 16px 11px;
+  width: 188px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid #80725855;
+  border-radius: 16px;
+  background: #fff6e8ed;
+  box-shadow: 0 8px 28px #4c49351a;
+  line-height: 1.5;
+  color: #3d584b;
+}
+.toast strong {
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+}
+.toast div {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+}
+.instructions strong {
+  color: #45583e;
+}
+.instructions p {
+  color: #747b68;
+}
+
+/* Once the first throw teaches the controls, let the room take the foreground. */
+.intro,
+.footer-note {
+  transition: opacity 1.2s ease;
+}
+body.playing .intro {
+  opacity: 0;
+  pointer-events: none;
+}
+body.playing .footer-note {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .footer-note {
+    transition: none;
+  }
+}

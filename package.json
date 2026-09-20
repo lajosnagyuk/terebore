@@ -1,0 +1,31 @@
+{
+  "name": "terebore",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.0.0",
+    "@types/three": "^0.180.0",
+    "prettier": "^3.9.8",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7"
+  },
+  "description": "A quiet browser game about bouncing colourful balls into a corner.",
+  "author": "lajosnagyuk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lajosnagyuk/terebore.git"
+  }
+}
