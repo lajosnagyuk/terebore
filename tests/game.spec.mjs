@@ -233,3 +233,71 @@ test("an audio resume rejection cannot interrupt play", async ({ page }) => {
   expect((await state(page)).balls).toHaveLength(9);
   await page.getByRole("button", { name: "Turn sound off" }).click();
 });
+
+test("room outlines fade through successive shells instead of drawing over the pile", async ({
+  page,
+}) => {
+  await openGame(page);
+  const contrast = await page.evaluate(async () => {
+    const THREE = await import("/node_modules/three/build/three.module.js");
+    const { roomOutline } = await import("/src/room-art.ts");
+    const { createMarbleMaterial } = await import("/src/marble-art.ts");
+    const renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true });
+    renderer.setSize(160, 160);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#f1e3cb");
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
+    camera.position.z = 5;
+    // Long room edges can have a sort centre closer than the balls even
+    // though the visible segment is behind them. The second edge is offscreen.
+    const line = roomOutline(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, -1, -5.2),
+        new THREE.Vector3(0, 30, -5.2),
+        new THREE.Vector3(30, 30, 20),
+        new THREE.Vector3(31, 30, 20),
+      ]),
+      "#777464",
+      0.6,
+    );
+    scene.add(line);
+    const geometry = new THREE.SphereGeometry(1, 32, 20);
+    const balls = Array.from({ length: 3 }, (_, i) => {
+      const ball = new THREE.Mesh(
+        geometry,
+        createMarbleMaterial("#da527c", 0.5),
+      );
+      ball.position.z = -i * 2;
+      scene.add(ball);
+      return ball;
+    });
+    const gl = renderer.getContext();
+    const read = () => {
+      renderer.render(scene, camera);
+      const pixels = new Uint8Array(4 * 4 * 4);
+      gl.readPixels(78, 78, 4, 4, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      return pixels;
+    };
+    const result = [0, 1, 3].map((count) => {
+      balls.forEach((ball, i) => (ball.visible = i < count));
+      line.visible = true;
+      const withLine = read();
+      line.visible = false;
+      const withoutLine = read();
+      return withLine.reduce(
+        (sum, value, i) =>
+          sum + (i % 4 === 3 ? 0 : Math.abs(value - withoutLine[i])),
+        0,
+      );
+    });
+    geometry.dispose();
+    balls.forEach((ball) => ball.material.dispose());
+    line.geometry.dispose();
+    line.material.dispose();
+    renderer.dispose();
+    return result;
+  });
+  expect(contrast[0]).toBeGreaterThan(50);
+  expect(contrast[1]).toBeLessThan(contrast[0] * 0.5);
+  expect(contrast[2]).toBeLessThan(contrast[1] * 0.4);
+});

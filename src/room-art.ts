@@ -26,3 +26,24 @@ export function roomMaterial(color: string) {
   };
   return material;
 }
+
+/** Room ink belongs behind translucent shells, regardless of an edge's sort centre. */
+export function roomOutline(
+  geometry: THREE.BufferGeometry,
+  color: string,
+  opacity: number,
+) {
+  const line = new THREE.LineSegments(
+    geometry,
+    new THREE.LineBasicMaterial({
+      color,
+      opacity,
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  // Opaque room first, then ink, contact shadows (-1), and sorted shells (0).
+  line.renderOrder = -2;
+  return line;
+}

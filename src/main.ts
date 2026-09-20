@@ -8,7 +8,7 @@ import { MatchLifecycle } from "./match-lifecycle";
 import { loadBest, saveBest } from "./persistence";
 import { pointerAim } from "./input";
 import "./style.css";
-import { roomMaterial } from "./room-art";
+import { roomMaterial, roomOutline } from "./room-art";
 import { throwReadiness, clearScore, nextChain } from "./cadence";
 import { palette } from "./palette";
 import { pickTarget, solveThrow, ThrowPreview, type AimTarget } from "./aiming";
@@ -112,14 +112,10 @@ function box(
   mesh.rotation.y = rotation;
   mesh.receiveShadow = true;
   mesh.castShadow = true;
-  const edges = new THREE.LineSegments(
+  const edges = roomOutline(
     new THREE.EdgesGeometry(mesh.geometry),
-    new THREE.LineBasicMaterial({
-      color: "#625c4c",
-      transparent: true,
-      opacity: 0.48,
-      toneMapped: false,
-    }),
+    "#625c4c",
+    0.48,
   );
   mesh.add(edges);
   room.add(mesh);
@@ -170,17 +166,7 @@ const seamGeometry = new THREE.BufferGeometry().setFromPoints([
   new THREE.Vector3(-3.025, 0, -3.025),
   new THREE.Vector3(-3.025, 18, -3.025),
 ]);
-room.add(
-  new THREE.Line(
-    seamGeometry,
-    new THREE.LineBasicMaterial({
-      color: "#777464",
-      transparent: true,
-      opacity: 0.6,
-      toneMapped: false,
-    }),
-  ),
-);
+room.add(roomOutline(seamGeometry, "#777464", 0.6));
 const radius = 0.36,
   geometry = new THREE.SphereGeometry(radius, 32, 20);
 function marbleMaterial(color: number) {
