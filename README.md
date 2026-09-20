@@ -6,7 +6,7 @@ No timer. No game over. Find your own rhythm.
 
 ## Play
 
-Point at the floor or either wall to aim, then click to throw. On a touchscreen, drag to aim and release. Throw strength is chosen automatically.
+Point at the floor or either wall to aim, then click to throw. On a touchscreen, drag to aim above your finger and release. A small ring keeps the target visible. Throw strength is chosen automatically.
 
 The fading dots suggest a few possible bounces. They stop near the wooden rail or pile, leaving the outcome to your throw. The ball in your pocket is the next one up.
 

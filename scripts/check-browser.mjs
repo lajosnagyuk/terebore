@@ -114,16 +114,20 @@ console.log(
 );
 // The score token settles outside the pile and never captures game input.
 await page.waitForTimeout(1150);
-const token = await page.locator('.toast').evaluate(el => {
+const token = await page.locator(".toast").evaluate((el) => {
   const rect = el.getBoundingClientRect();
-  return { left: rect.left, right: rect.right, bottom: rect.bottom,
+  return {
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
     opacity: getComputedStyle(el).opacity,
-    pointerEvents: getComputedStyle(el).pointerEvents };
+    pointerEvents: getComputedStyle(el).pointerEvents,
+  };
 });
-assert.equal(token.pointerEvents, 'none');
-assert.equal(token.opacity, '1');
+assert.equal(token.pointerEvents, "none");
+assert.equal(token.opacity, "1");
 assert.ok(token.left >= 12 && token.right < 300 && token.bottom < 700);
-await page.screenshot({ path: '/tmp/terebore-score-token.png' });
+await page.screenshot({ path: "/tmp/terebore-score-token.png" });
 // Right click must not throw, and cancelled touch/pointer gestures must not throw.
 const beforeCancel = await page.evaluate(() => window.__terebore.current);
 await page.mouse.click(450, 440, { button: "right" });
@@ -155,11 +159,35 @@ await cdp.send("Input.dispatchTouchEvent", {
   type: "touchMove",
   touchPoints: [{ x: 200, y: 430 }],
 });
+const touchAim = await page.evaluate(() => window.__terebore.targeting);
+assert.deepEqual(
+  touchAim.pointer,
+  [200, 346],
+  "Touch aim should sit 84 CSS pixels above the finger",
+);
+assert.equal(
+  await page
+    .locator(".touch-aim")
+    .evaluate((el) => getComputedStyle(el).opacity),
+  "1",
+);
+await page.screenshot({ path: "/tmp/terebore-touch-aim.png" });
 await cdp.send("Input.dispatchTouchEvent", {
   type: "touchEnd",
   touchPoints: [],
 });
 assert.equal(await page.evaluate(() => window.__terebore.current), 1);
+assert.deepEqual(
+  await page.evaluate(() => window.__terebore.targeting.point),
+  touchAim.point,
+  "Releasing must preserve the visible target",
+);
+assert.equal(
+  await page
+    .locator(".touch-aim")
+    .evaluate((el) => getComputedStyle(el).opacity),
+  "0",
+);
 await page.waitForFunction(() => window.__terebore.cadence.ready);
 const beforeCancelledTouch = await page.evaluate(() => ({
   current: window.__terebore.current,

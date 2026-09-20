@@ -33,7 +33,7 @@ document.querySelector("#app")!.innerHTML = `
 <div class="toast" role="status" aria-live="polite"><strong id="points"></strong><div id="message"></div></div><div class="hand-label">IN YOUR HAND</div>
 <div class="instructions"><div class="gesture"><svg viewBox="0 0 22 32"><path d="M11 29V3m-6 6 6-6 6 6"/><circle cx="11" cy="26" r="4" fill="#ecece2"/></svg></div><strong id="hint">Point to aim · click to throw</strong><p>Choose a bounce. Let it go.</p></div>
 <div class="bottom"><div class="pocket"><div class="pocket-ball"></div><div><div class="eyebrow">In your pocket</div><div class="pocket-text" id="next-name">Cherry blossom</div></div></div><div class="footer-note"><span>✧</span> Nothing to win. A little peace to find.</div></div></div>
-<dialog id="help-dialog"><h2>Find your little rhythm.</h2><p>Point at the floor or either wall to choose your first bounce. The dots follow your aim. Click to throw. On touch, drag to choose your target and release to throw.</p><div class="match-dots"><i></i><i></i><i></i></div><p>When three or more marbles of the same colour touch, they turn into a soft puff. Each marble brings 10 points. Larger groups bring a little bonus.</p><p>Try bouncing before the wooden retaining rail, landing inside it, or banking off a wall. The dots suggest up to four room bounces, fading as the path becomes less certain. At the rail or pile, the guide leaves the outcome to your throw.</p><p>Let each throw land before the next. A wall-assisted match earns 15 extra points; a chain reaction earns a little more. Matching marbles brighten together, then clear.</p><p>No timer. No game over. Take your time.</p><p class="key">Keyboard: Arrow keys to move your aim · Space to throw · Esc to close</p><button id="close-help">Lovely. Let’s play.</button></dialog>
+<dialog id="help-dialog"><h2>Find your little rhythm.</h2><p>Point at the floor or either wall to choose your first bounce. The dots follow your aim. Click to throw. On touch, drag to move the aim point above your finger, then release to throw.</p><div class="match-dots"><i></i><i></i><i></i></div><p>When three or more marbles of the same colour touch, they turn into a soft puff. Each marble brings 10 points. Larger groups bring a little bonus.</p><p>Try bouncing before the wooden retaining rail, landing inside it, or banking off a wall. The dots suggest up to four room bounces, fading as the path becomes less certain. At the rail or pile, the guide leaves the outcome to your throw.</p><p>Let each throw land before the next. A wall-assisted match earns 15 extra points; a chain reaction earns a little more. Matching marbles brighten together, then clear.</p><p>No timer. No game over. Take your time.</p><p class="key">Keyboard: Arrow keys to move your aim · Space to throw · Esc to close</p><button id="close-help">Lovely. Let’s play.</button></dialog>
 <dialog id="reset-dialog"><h2>A fresh little start?</h2><p>Your score and marbles will reset. Your personal best stays with you.</p><button id="confirm-reset">Start fresh</button> <button id="cancel-reset" style="background:transparent;color:#68765e">Keep playing</button></dialog>`;
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
@@ -867,6 +867,48 @@ function dialogOpen() {
 let drag: { id: number } | null = null;
 let lastPointerType = "mouse";
 const surface = $("#world");
+// Touch aims above the fingertip; the same mapping is used on release.
+const touchAimOffset = 84;
+const touchFeedback = document.createElementNS(
+  "http://www.w3.org/2000/svg",
+  "svg",
+);
+touchFeedback.classList.add("touch-aim");
+touchFeedback.setAttribute("aria-hidden", "true");
+touchFeedback.innerHTML =
+  '<line class="touch-aim-link"/><circle class="touch-aim-ring" r="10"/>';
+document.body.appendChild(touchFeedback);
+const touchLink = touchFeedback.querySelector("line")!;
+const touchRing = touchFeedback.querySelector("circle")!;
+const touchTargetScreen = new THREE.Vector3();
+function aimFromPointer(e: PointerEvent) {
+  const touch = e.pointerType === "touch";
+  aimAt(
+    e.clientX,
+    touch ? Math.max(20, e.clientY - touchAimOffset) : e.clientY,
+  );
+  touchFeedback.classList.toggle("visible", touch && hasTarget);
+  if (!touch || !hasTarget) return;
+  touchTargetScreen
+    .copy(target.point)
+    .applyMatrix4(room.matrixWorld)
+    .project(camera);
+  const x = ((touchTargetScreen.x + 1) * innerWidth) / 2;
+  const y = ((1 - touchTargetScreen.y) * innerHeight) / 2;
+  const dx = x - e.clientX,
+    dy = y - e.clientY;
+  const distance = Math.hypot(dx, dy);
+  const start = Math.min(24 / Math.max(1, distance), 1);
+  const end = Math.max(0, 1 - 14 / Math.max(1, distance));
+  touchLink.setAttribute("x1", String(e.clientX + dx * start));
+  touchLink.setAttribute("y1", String(e.clientY + dy * start));
+  touchLink.setAttribute("x2", String(e.clientX + dx * end));
+  touchLink.setAttribute("y2", String(e.clientY + dy * end));
+  touchLink.style.opacity = distance > 40 ? "1" : "0";
+  touchRing.setAttribute("cx", String(x));
+  touchRing.setAttribute("cy", String(y));
+}
+
 surface.addEventListener("pointerdown", (e) => {
   if (e.button !== 0 || !e.isPrimary || dialogOpen()) return;
   lastPointerType = e.pointerType;
@@ -874,24 +916,26 @@ surface.addEventListener("pointerdown", (e) => {
   drag = { id: e.pointerId };
   $(".hand-label").style.opacity = "0";
   surface.setPointerCapture(e.pointerId);
-  aimAt(e.clientX, e.clientY);
+  aimFromPointer(e);
 });
 surface.addEventListener("pointermove", (e) => {
   if (dialogOpen() || !e.isPrimary || (drag && drag.id !== e.pointerId)) return;
   lastPointerType = e.pointerType;
-  if (e.pointerType === "mouse" || drag) aimAt(e.clientX, e.clientY);
+  if (e.pointerType === "mouse" || drag) aimFromPointer(e);
 });
 function cancelDrag() {
+  touchFeedback.classList.remove("visible");
   drag = null;
   $(".hand-label").style.opacity = "";
   drawAim(false);
 }
 surface.addEventListener("pointerup", (e) => {
   if (!drag || e.pointerId !== drag.id) return;
-  aimAt(e.clientX, e.clientY);
+  aimFromPointer(e);
   drag = null;
   $(".hand-label").style.opacity = "";
   if (hasTarget) throwBall();
+  touchFeedback.classList.remove("visible");
   if (e.pointerType !== "mouse") drawAim(false);
 });
 surface.addEventListener("pointerleave", () => {
@@ -1222,6 +1266,7 @@ if (import.meta.env.DEV)
       palette: palette.map((p) => ({ name: p.name, color: p.color })),
       release: { position: throwOrigin.toArray() },
       targeting: {
+        pointer: [pointerPosition.x, pointerPosition.y],
         surface: target.surface,
         point: target.point.toArray(),
         visible: aiming,
