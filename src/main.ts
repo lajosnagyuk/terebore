@@ -1079,8 +1079,8 @@ function resize() {
   handCamera.aspect = camera.aspect;
   handCamera.updateProjectionMatrix();
   const visibleHeight = 2 * Math.tan(THREE.MathUtils.degToRad(35 / 2)) * 5;
-  // Project the real release point into the held-marble layer. A seated hand
-  // should have the same position and apparent size before and after release.
+  // Keep the resting hand below the release point, leaving the pile visible.
+  // This presentation offset does not change the physical launch or aiming.
   camera.updateMatrixWorld();
   room.updateMatrixWorld(true);
   const releaseWorld = room.localToWorld(throwOrigin.clone());
@@ -1095,14 +1095,21 @@ function resize() {
     .project(camera);
   const pixelRadius =
     (Math.abs(edgeScreen.x - releaseScreen.x) * innerWidth) / 2;
+  const compact = innerWidth < 640;
+  const heldRadius = pixelRadius * (compact ? 0.78 : 0.84);
+  const releaseY = ((1 - releaseScreen.y) * innerHeight) / 2;
+  const heldY = Math.min(
+    releaseY + pixelRadius * (compact ? 1.5 : 1.1),
+    innerHeight - heldRadius - 110,
+  );
   handRestX = (releaseScreen.x * visibleHeight * camera.aspect) / 2;
-  handRestY = (releaseScreen.y * visibleHeight) / 2;
+  handRestY = (0.5 - heldY / innerHeight) * visibleHeight;
   handLift = (8 * visibleHeight) / innerHeight;
   hand.position.set(handRestX, handRestY, 0);
-  handBaseScale = (pixelRadius * visibleHeight) / (innerHeight * radius);
+  handBaseScale = (heldRadius * visibleHeight) / (innerHeight * radius);
   const label = $(".hand-label");
   label.style.left = `${((releaseScreen.x + 1) * innerWidth) / 2}px`;
-  label.style.top = `${((1 - releaseScreen.y) * innerHeight) / 2 + pixelRadius + 17}px`;
+  label.style.top = `${heldY + heldRadius + 17}px`;
   label.style.bottom = "auto";
   hand.scale.setScalar(handBaseScale);
 }
