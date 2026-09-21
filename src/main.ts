@@ -899,7 +899,7 @@ resize();
 seed();
 updateHand();
 // Advance simulation time faster without adding energy to collisions.
-const gameplaySpeed = 1.2;
+const gameplaySpeed = 1.38;
 let previous = performance.now();
 const handLabel = $(".hand-label");
 const instructionDetail = $(".instructions p");
@@ -919,7 +919,7 @@ function frame(now: number) {
   }
   if (!paused) {
     elapsed += dt;
-    world.step(1 / 90, dt, 6);
+    world.step(1 / 90, dt, 7);
     for (const celebration of matchLifecycle.takeReady(elapsed)) {
       clearGroup(
         balls.filter((b) => celebration.ids.includes(b.body.id)),

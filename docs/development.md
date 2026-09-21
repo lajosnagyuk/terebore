@@ -65,7 +65,7 @@ The canvas starts with a 1.6-million-pixel ceiling and adapts to sustained frame
 
 Ball shells use thickness-dependent transparency, soft pigment variation, and baked studio reflections. Background colours show through without refraction or blur. Transparent draw ordering and the separate held-ball layer must be preserved when changing rendering.
 
-Physics uses fixed 1/90-second steps, interpolation, a sweep-and-prune broadphase, and sleeping bodies. Gameplay time advances at 1.2 times real time. The inclined room and gravity share the same coordinate system. Static collider bounds must be refreshed after positioning so broadphase collision detection remains correct.
+Physics uses fixed 1/90-second steps, interpolation, a sweep-and-prune broadphase, and sleeping bodies. Gameplay time advances at 1.38 times real time. The inclined room and gravity share the same coordinate system. Static collider bounds must be refreshed after positioning so broadphase collision detection remains correct.
 
 Ball-to-ball restitution starts at 0.221. A pair containing Clay applies a 0.9 multiplier; a pair containing Light applies 1.05. Each type applies once, so Clay–Clay is 10% softer, Light–Light is 5% bouncier, and Clay–Light combines both. All ball-to-room contacts retain restitution 0.56 and friction 0.22; ball-to-ball friction stays 0.12. Perfects use their primary colour’s physical material.
 
