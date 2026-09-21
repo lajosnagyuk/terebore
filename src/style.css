@@ -568,8 +568,8 @@ body.playing .footer-note {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    #fff0c764,
-    #fffaf02a 38%,
+    #fff0c79c,
+    #fffaf037 38%,
     transparent 72%
   );
 }
