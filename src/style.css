@@ -527,3 +527,53 @@ body.playing .footer-note {
     #50534f
   );
 }
+
+.wordmark {
+  position: relative;
+}
+.chance-lights {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 3px;
+  display: flex;
+  gap: 3px;
+}
+.chance-lights i {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--chance-color);
+  opacity: var(--chance-glow, 0);
+  box-shadow: 0 0 5px 1px var(--chance-color);
+  transition: opacity 600ms ease;
+}
+.chance-lights b {
+  position: absolute;
+  inset: 6px 0 auto;
+  height: 2px;
+  border-radius: 2px;
+  background: #fffbea;
+  box-shadow: 0 0 7px 2px #fffbea;
+  opacity: var(--chance-glow, 0);
+  transition: opacity 600ms ease;
+}
+.pocket-ball[data-finish="perfect"] {
+  position: relative;
+}
+.pocket-ball[data-finish="perfect"]::after {
+  content: "";
+  position: absolute;
+  inset: 45%;
+  border-radius: 50%;
+  background: #fff0c7;
+  box-shadow:
+    0 0 5px 2px #fffaf0aa,
+    0 0 11px 5px #fffaf044;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chance-lights i,
+  .chance-lights b {
+    transition: none;
+  }
+}

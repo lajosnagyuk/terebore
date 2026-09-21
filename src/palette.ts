@@ -1,7 +1,7 @@
 export const primaryColorCount = 5;
 export const lightColor = 5;
 export const clayColor = 6;
-export type BallFinish = "normal" | "light" | "clay";
+export type BallFinish = "normal" | "light" | "clay" | "perfect";
 // Five primary families and two rare playtest pieces.
 export const palette: {
   name: string;

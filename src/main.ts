@@ -155,11 +155,11 @@ const seamGeometry = new THREE.BufferGeometry().setFromPoints([
 room.add(roomOutline(seamGeometry, "#777464", 0.6));
 const radius = 0.36,
   geometry = new THREE.SphereGeometry(radius, 32, 20);
-function marbleMaterial(color: number) {
+function marbleMaterial(color: number, perfect = false) {
   return createMarbleMaterial(
     palette[color].color,
     Math.random(),
-    palette[color].finish,
+    perfect ? "perfect" : palette[color].finish,
   );
 }
 
@@ -168,6 +168,7 @@ type Ball = {
   body: CANNON.Body;
   mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshMatcapMaterial>;
   color: number;
+  perfect: boolean;
   born: number;
   impact: number;
   impactNormal: THREE.Vector3;
@@ -182,6 +183,8 @@ let elapsed = 0,
 const colorDraw = new ColorDraw();
 let current = 0,
   next = 1;
+let currentPerfect = false,
+  nextPerfect = false;
 let aim = 0,
   power = 0.5;
 let target: AimTarget = {
@@ -206,19 +209,48 @@ const handCamera = new THREE.PerspectiveCamera(
 handCamera.position.z = 5;
 const hand = new THREE.Mesh(geometry, marbleMaterial(0));
 handScene.add(hand);
+const chanceSegments = Array.from(
+  document.querySelectorAll<HTMLElement>(".chance-lights i"),
+);
+const lightSegment = $(".chance-lights b");
+function updateChanceLights() {
+  const glow = colorDraw.glow;
+  const descriptions: string[] = [];
+  const describe = (value: number) =>
+    value === 0 ? "at base" : value < 0.5 ? "growing" : "high";
+  chanceSegments.forEach((segment, color) => {
+    segment.style.setProperty("--chance-color", palette[color].color);
+    segment.style.setProperty(
+      "--chance-glow",
+      String(Math.sqrt(glow.perfects[color])),
+    );
+    descriptions.push(
+      `Perfect ${palette[color].name}: ${describe(glow.perfects[color])}`,
+    );
+  });
+  lightSegment.style.setProperty(
+    "--chance-glow",
+    String(Math.sqrt(glow.light)),
+  );
+  descriptions.push(`Light: ${describe(glow.light)}`);
+  $(".chance-lights").setAttribute("aria-label", descriptions.join(". "));
+}
 function updateHand() {
   hand.material.dispose();
-  hand.material = marbleMaterial(current);
+  hand.material = marbleMaterial(current, currentPerfect);
   const p = palette[next];
-  $(".pocket-ball").dataset.finish = p.finish ?? "normal";
+  $(".pocket-ball").dataset.finish = nextPerfect
+    ? "perfect"
+    : (p.finish ?? "normal");
   $(".pocket-ball").style.setProperty("--ball", p.color);
   $(".pocket-ball").style.setProperty("--dark", p.dark);
-  $("#next-name").textContent = p.name;
+  $("#next-name").textContent = nextPerfect ? `Perfect ${p.name}` : p.name;
+  updateChanceLights();
 }
 let lastSound = 0;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
 let chordTimer: ReturnType<typeof setTimeout> | undefined;
-function addBall(color: number, position: THREE.Vector3) {
+function addBall(color: number, position: THREE.Vector3, perfect = false) {
   const body = new CANNON.Body({
     mass: 1,
     shape: new CANNON.Sphere(radius),
@@ -231,7 +263,7 @@ function addBall(color: number, position: THREE.Vector3) {
   body.position.set(position.x, position.y, position.z);
   body.updateAABB();
   world.addBody(body);
-  const mesh = new THREE.Mesh(geometry, marbleMaterial(color));
+  const mesh = new THREE.Mesh(geometry, marbleMaterial(color, perfect));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.position.copy(position);
@@ -240,6 +272,7 @@ function addBall(color: number, position: THREE.Vector3) {
     body,
     mesh,
     color,
+    perfect,
     born: elapsed,
     impact: -10,
     impactNormal: new THREE.Vector3(0, 1, 0),
@@ -299,7 +332,7 @@ function seed() {
   for (const [x, z, c] of positions) addBall(c, new THREE.Vector3(x, 0.38, z));
 }
 function chooseColor() {
-  return colorDraw.next(balls.map((ball) => ball.color));
+  return colorDraw.piece(balls.map((ball) => ball.color));
 }
 function trajectory() {
   return solveThrow(target);
@@ -319,7 +352,7 @@ function readyToThrow() {
 function throwBall() {
   if (!readyToThrow() || dialogOpen() || !hasTarget) return;
   const { origin, velocity } = trajectory();
-  const b = addBall(current, origin);
+  const b = addBall(current, origin, currentPerfect);
   b.launched = true;
   shotSerial++;
   activeThrow = b;
@@ -329,7 +362,10 @@ function throwBall() {
   lastThrow = elapsed;
   document.body.classList.add("playing");
   current = next;
-  next = chooseColor();
+  currentPerfect = nextPerfect;
+  const piece = chooseColor();
+  next = piece.color;
+  nextPerfect = piece.perfect;
   updateHand();
   audio.tone(330, 0.018, 0.15);
   aimDirty = true;
@@ -514,7 +550,8 @@ function clearGroup(matched: Ball[], originatingShot: number) {
     for (const ball of matched) ball.clearingAt = -1;
     return;
   }
-  colorDraw.recordMatch();
+  colorDraw.recordMatch(matched.map((ball) => ball.color));
+  updateChanceLights();
   chain = nextChain(
     chain,
     elapsed - lastClear,
@@ -550,8 +587,12 @@ function clearGroup(matched: Ball[], originatingShot: number) {
       .map((ball) => ball.body.position),
   );
   const points =
-    clearScore(matched.length, banked, chain) +
-    (clearedCorner ? clearCornerPoints : 0);
+    clearScore(
+      matched.length,
+      banked,
+      chain,
+      matched.filter((ball) => ball.perfect).length,
+    ) + (clearedCorner ? clearCornerPoints : 0);
 
   score += points;
   $("#score").textContent = String(score);
@@ -797,6 +838,7 @@ $("#confirm-reset").onclick = () => {
   current = 0;
   next = 1;
   colorDraw.reset();
+  currentPerfect = nextPerfect = false;
   aim = 0;
   power = 0.5;
   target = {
@@ -1033,6 +1075,7 @@ if (import.meta.env.DEV)
       score,
       balls: balls.map((b) => ({
         color: b.color,
+        perfect: b.perfect,
         position: {
           x: b.body.position.x,
           y: b.body.position.y,
@@ -1044,7 +1087,12 @@ if (import.meta.env.DEV)
       })),
       current,
       next,
-      draw: { lightChance: colorDraw.lightChance },
+      currentPerfect,
+      nextPerfect,
+      draw: {
+        lightChance: colorDraw.lightChance,
+        perfectChances: colorDraw.perfectChances,
+      },
       elapsed,
       cadence: { ready: readyToThrow(), age: elapsed - lastThrow },
       celebrations: matchLifecycle.size,

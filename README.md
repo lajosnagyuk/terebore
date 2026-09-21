@@ -65,3 +65,7 @@ Run `npm test` for the faster unit suite alone.
 Terebore uses TypeScript, Three.js, and cannon-es. Artwork, textures, and sounds are generated in code. Adaptive render resolution keeps the game lightweight on integrated graphics while the interface stays sharp. A modern browser with WebGL 2 is required; sound is optional, and reduced-motion preferences are respected by interface transitions.
 
 See [Development notes](docs/development.md) for browser checks, performance measurements, and the code layout.
+
+Each primary colour also has a **Perfect** variant with a small warm-white heart. Perfects match the same colour normally. Each Perfect in a group adds 50% of the match score (one: 1.5×, two: 2×, three: 2.5×), rounded to the nearest whole point. The clear-triangle bonus is added afterwards. Light and Clay have no Perfect variants.
+
+At base, one in six draws of a primary family is Perfect: one Perfect for every five ordinary balls. Each completed match containing that colour adds another one-sixth to its Perfect chance, capped at certainty. A colour gains only one step per match, even in large groups; a Light-assisted match can advance multiple colours. Drawing a Perfect resets only its colour, and a new round resets everything. The five segments beneath the logo brighten with the corresponding chances; the soft white underline tracks Light. All indicators are unlit at base.

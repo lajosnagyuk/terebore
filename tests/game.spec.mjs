@@ -405,3 +405,59 @@ test("a completed match raises Light odds until it enters the pocket", async ({
   await reset(page);
   expect((await state(page)).draw.lightChance).toBe(1 / 42);
 });
+
+for (const count of [1, 2, 3]) {
+  test(`${count} Perfects match their ordinary family and add score before the corner bonus`, async ({
+    page,
+  }) => {
+    await matchingPile(
+      page,
+      "none",
+      [0, 0, 0],
+      [count >= 1, count >= 2, count >= 3],
+    );
+    await openGame(page);
+    await expect(page.locator(".chance-lights i")).toHaveCount(5);
+    await expect
+      .poll(async () => (await state(page)).score)
+      .toBe(55 + count * 15);
+    expect((await state(page)).balls).toHaveLength(0);
+    expect((await state(page)).draw.perfectChances[0]).toBe(2 / 6);
+    await expect(page.locator(".chance-lights")).toHaveAttribute(
+      "aria-label",
+      /Perfect Cherry blossom: growing/,
+    );
+    expect(
+      await page
+        .locator(".chance-lights i")
+        .first()
+        .evaluate((el) => Number(el.style.getPropertyValue("--chance-glow"))),
+    ).toBeGreaterThan(0);
+    await reset(page);
+    expect((await state(page)).draw.perfectChances).toEqual(
+      Array(5).fill(1 / 6),
+    );
+  });
+}
+test("a Perfect moves from pocket to hand to pile with its identity intact", async ({
+  page,
+}) => {
+  await openGame(page);
+  await page.evaluate(() => {
+    Math.random = () => 0;
+  });
+  await page.mouse.click(450, 440);
+  await expect(page.locator("#next-name")).toHaveText("Perfect Wild plum");
+  await expect(page.locator(".pocket-ball")).toHaveAttribute(
+    "data-finish",
+    "perfect",
+  );
+  await page.waitForFunction(() => window.__terebore.cadence.ready);
+  await page.mouse.click(450, 440);
+  expect((await state(page)).currentPerfect).toBe(true);
+  await page.waitForFunction(() => window.__terebore.cadence.ready);
+  await page.mouse.click(450, 440);
+  expect(
+    (await state(page)).balls.some((ball) => ball.color === 2 && ball.perfect),
+  ).toBe(true);
+});

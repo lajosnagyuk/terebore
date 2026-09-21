@@ -73,3 +73,59 @@ test("Light increases additively without changing the Clay interval", () => {
     assert.equal(counts[lightColor], Math.min(steps, 41));
   }
 });
+
+test("Perfect chances advance once per matched family and reset independently on draw", async () => {
+  const { ColorDraw } = await import("./color-selection");
+  const draw = new ColorDraw();
+  assert.deepEqual(draw.perfectChances, Array(5).fill(1 / 6));
+  assert.deepEqual(draw.glow, { perfects: [0, 0, 0, 0, 0], light: 0 });
+  draw.recordMatch([0, 0, 1, lightColor, clayColor, -1]);
+  assert.deepEqual(draw.perfectChances, [2 / 6, 2 / 6, 1 / 6, 1 / 6, 1 / 6]);
+  assert.deepEqual(draw.glow, { perfects: [0.2, 0.2, 0, 0, 0], light: 1 / 40 });
+  const ordinary = [0, 0, 0.9];
+  assert.deepEqual(
+    draw.piece([], () => ordinary.shift()!),
+    { color: 0, perfect: false },
+  );
+  assert.equal(draw.perfectChances[0], 2 / 6);
+  assert.deepEqual(
+    draw.piece([], () => 0),
+    { color: 0, perfect: true },
+  );
+  assert.deepEqual(draw.perfectChances, [1 / 6, 2 / 6, 1 / 6, 1 / 6, 1 / 6]);
+  assert.equal(draw.lightChance, 2 / 42);
+  assert.deepEqual(
+    draw.piece([], () => 0.95),
+    { color: lightColor, perfect: false },
+  );
+  assert.equal(draw.perfectChances[1], 2 / 6);
+  assert.deepEqual(
+    draw.piece([], () => 0.99),
+    { color: clayColor, perfect: false },
+  );
+  for (let i = 0; i < 20; i++) draw.recordMatch([1]);
+  assert.equal(draw.perfectChances[1], 1);
+  assert.equal(draw.glow.perfects[1], 1);
+  // Select primary family 1, then use a near-one Perfect ticket at the cap.
+  const certain = [0, 0.2, 0.999];
+  assert.deepEqual(
+    draw.piece([], () => certain.shift()!),
+    { color: 1, perfect: true },
+  );
+  draw.recordMatch([2]);
+  draw.reset();
+  assert.deepEqual(draw.perfectChances, Array(5).fill(1 / 6));
+  assert.deepEqual(draw.glow, { perfects: [0, 0, 0, 0, 0], light: 0 });
+});
+
+test("base Perfect draws are one fifth as common as ordinary draws of the same colour", async () => {
+  const { ColorDraw } = await import("./color-selection");
+  let perfects = 0;
+  for (let ticket = 0; ticket < 600; ticket++) {
+    const values = [0, 0.6, (ticket + 0.5) / 600];
+    const piece = new ColorDraw().piece([], () => values.shift()!);
+    assert.equal(piece.color, 3);
+    perfects += Number(piece.perfect);
+  }
+  assert.equal(perfects, 100);
+});

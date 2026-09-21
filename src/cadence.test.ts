@@ -20,3 +20,11 @@ test("chain bonuses reward settling, not rushing the next throw", () => {
   assert.equal(nextChain(1, 0.8, false), 1);
   assert.equal(nextChain(1, 3, true), 1);
 });
+
+test("Perfect bonuses add half of the match score per Perfect, with whole-point rounding", () => {
+  assert.equal(clearScore(3, false, 1, 1), 45);
+  assert.equal(clearScore(3, false, 1, 2), 60);
+  assert.equal(clearScore(3, false, 1, 3), 75);
+  assert.equal(clearScore(3, true, 1, 1), 68);
+  assert.equal(clearScore(4, false, 2, 2), 110);
+});

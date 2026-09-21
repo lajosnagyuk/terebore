@@ -6,13 +6,18 @@ export function throwReadiness(
 ) {
   return age >= 2.2 || (age >= 1.15 && (reachedPile || speed < 1.25));
 }
-export function clearScore(count: number, banked: boolean, chain: number) {
-  return (
+export function clearScore(
+  count: number,
+  banked: boolean,
+  chain: number,
+  perfects = 0,
+) {
+  const base =
     count * 10 +
     Math.max(0, count - 3) * 5 +
     (banked ? 15 : 0) +
-    Math.max(0, chain - 1) * 10
-  );
+    Math.max(0, chain - 1) * 10;
+  return Math.round(base * (1 + perfects * 0.5));
 }
 
 export function nextChain(previous: number, age: number, sameThrow: boolean) {

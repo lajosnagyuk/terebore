@@ -98,6 +98,7 @@ export function createMarbleMaterial(
   material.userData.impactNormal = impactNormal;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uLuminescence = { value: finish === "light" ? 0.16 : 0 };
+    shader.uniforms.uPerfect = { value: finish === "perfect" ? 1 : 0 };
     shader.uniforms.uMatte = { value: finish === "clay" ? 0.8 : 0 };
     shader.uniforms.uCelebration = glow;
     shader.uniforms.uCompression = compression;
@@ -109,7 +110,7 @@ export function createMarbleMaterial(
         "#include <begin_vertex>\ntransformed = transformed * (1.0 + uCompression * .5) - uImpactNormal * dot(transformed, uImpactNormal) * uCompression * 1.5;",
       );
     shader.fragmentShader =
-      "uniform float uCelebration; uniform float uLuminescence; uniform float uMatte;\n" +
+      "uniform float uPerfect; uniform float uCelebration; uniform float uLuminescence; uniform float uMatte;\n" +
       shader.fragmentShader;
     // A thick shell has its longest optical path just inside the silhouette.
     // Keep a narrow ink edge; the soft inner crescent gives a sense of depth.
@@ -137,6 +138,11 @@ export function createMarbleMaterial(
       outgoingLight = mix(pigment * 0.21, outgoingLight, edge);
       outgoingLight = mix(outgoingLight, cloudyTint, uLuminescence);
       outgoingLight += cloudyTint * uLuminescence * 0.25;
+      // A small luminous core seen through the cloudy shell, with a quiet halo.
+      float core = pow(facing, 240.0) * uPerfect;
+      float coreHalo = pow(facing, 28.0) * uPerfect;
+      outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), coreHalo * 0.24);
+      outgoingLight = mix(outgoingLight, vec3(1.0, 0.94, 0.78), core * 0.88);
       outgoingLight = mix(outgoingLight, vec3(1.0,.91,.67), uCelebration*.28);
       // Visual shell walls occupy 38.4% of the outer radius.
       // Optical thickness is independent of collision geometry.
