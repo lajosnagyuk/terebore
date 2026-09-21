@@ -1,4 +1,4 @@
-import { chooseNextColor } from "./color-selection";
+import { ColorDraw } from "./color-selection";
 import { clearsTriangle, clearCornerPoints } from "./play-area";
 import { ScoreToken } from "./score-token";
 import { ContactShadows } from "./contact-shadows";
@@ -179,6 +179,7 @@ type Ball = {
 let balls: Ball[] = [];
 let elapsed = 0,
   lastThrow = -10;
+const colorDraw = new ColorDraw();
 let current = 0,
   next = 1;
 let aim = 0,
@@ -298,7 +299,7 @@ function seed() {
   for (const [x, z, c] of positions) addBall(c, new THREE.Vector3(x, 0.38, z));
 }
 function chooseColor() {
-  return chooseNextColor(balls.map((ball) => ball.color));
+  return colorDraw.next(balls.map((ball) => ball.color));
 }
 function trajectory() {
   return solveThrow(target);
@@ -513,6 +514,7 @@ function clearGroup(matched: Ball[], originatingShot: number) {
     for (const ball of matched) ball.clearingAt = -1;
     return;
   }
+  colorDraw.recordMatch();
   chain = nextChain(
     chain,
     elapsed - lastClear,
@@ -794,6 +796,7 @@ $("#confirm-reset").onclick = () => {
   $("#score").textContent = "0";
   current = 0;
   next = 1;
+  colorDraw.reset();
   aim = 0;
   power = 0.5;
   target = {
@@ -1041,6 +1044,7 @@ if (import.meta.env.DEV)
       })),
       current,
       next,
+      draw: { lightChance: colorDraw.lightChance },
       elapsed,
       cadence: { ready: readyToThrow(), age: elapsed - lastThrow },
       celebrations: matchLifecycle.size,

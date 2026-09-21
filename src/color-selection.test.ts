@@ -30,3 +30,46 @@ test("primary assistance never copies a rare piece from the pile", () => {
     2,
   );
 });
+
+test("each match adds a Light step, and only drawing Light or resetting consumes it", async () => {
+  const { ColorDraw } = await import("./color-selection");
+  const draw = new ColorDraw();
+  assert.equal(draw.lightChance, 1 / 42);
+  draw.recordMatch();
+  draw.recordMatch();
+  assert.equal(draw.lightChance, 3 / 42);
+  assert.equal(
+    draw.next([], () => 0.99),
+    clayColor,
+  );
+  assert.equal(draw.lightChance, 3 / 42);
+  assert.equal(
+    draw.next([], () => 0),
+    0,
+  );
+  assert.equal(draw.lightChance, 3 / 42);
+  assert.equal(
+    draw.next([], () => 38.5 / 42),
+    lightColor,
+  );
+  assert.equal(draw.lightChance, 1 / 42);
+  draw.recordMatch();
+  draw.reset();
+  assert.equal(draw.lightChance, 1 / 42);
+  for (let i = 0; i < 100; i++) draw.recordMatch();
+  assert.equal(draw.lightChance, 41 / 42);
+  assert.equal(
+    draw.next([], () => 0.99),
+    clayColor,
+  );
+  assert.equal(draw.lightChance, 41 / 42);
+});
+test("Light increases additively without changing the Clay interval", () => {
+  for (const steps of [1, 2, 3, 20, 41, 100]) {
+    const counts = Array(7).fill(0);
+    for (let slot = 0; slot < 42; slot++)
+      counts[chooseNextColor([], () => (slot + 0.5) / 42, steps)]++;
+    assert.equal(counts[clayColor], 1);
+    assert.equal(counts[lightColor], Math.min(steps, 41));
+  }
+});

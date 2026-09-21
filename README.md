@@ -4,7 +4,7 @@ A quiet browser game about throwing colourful, translucent balls into the corner
 
 No timer. No game over. Find your own rhythm.
 
-Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and only connects directly to Light; Clay balls cannot match each other. Each special appears about one-eighth as often as an average primary colour (1 in 42 draws).
+Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and only connects directly to Light; Clay balls cannot match each other. Clay stays at 1 in 42 draws. Light starts at the same chance, gaining another 1/42 for every completed match until a Light is drawn into the pocket; then it resets. A fresh round also resets the chance. Light caps at 41/42 so Clay keeps its original chance.
 
 ## Play
 

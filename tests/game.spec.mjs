@@ -388,3 +388,20 @@ test("three Clay balls remain inert in the physical pile", async ({ page }) => {
   await expect(page.locator("#score")).toHaveText("0");
   expect((await state(page)).balls).toHaveLength(3);
 });
+
+test("a completed match raises Light odds until it enters the pocket", async ({
+  page,
+}) => {
+  await matchingPile(page, "none");
+  await openGame(page);
+  await expect(page.locator("#score")).toHaveText("55");
+  expect((await state(page)).draw.lightChance).toBe(2 / 42);
+  // This ticket is primary at base odds, but Light after one match.
+  await page.evaluate(() => (Math.random = () => 0.94));
+  await page.mouse.click(450, 440);
+  expect((await state(page)).next).toBe(5);
+  expect((await state(page)).draw.lightChance).toBe(1 / 42);
+  await expect(page.locator("#next-name")).toHaveText("Light");
+  await reset(page);
+  expect((await state(page)).draw.lightChance).toBe(1 / 42);
+});
