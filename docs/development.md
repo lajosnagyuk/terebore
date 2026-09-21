@@ -24,12 +24,15 @@ node scripts/check-browser.mjs
 node scripts/check-bank.mjs
 node scripts/check-translucency.mjs
 node scripts/benchmark.mjs
+node scripts/benchmark-lighting.mjs
 node scripts/check-resources.mjs
 ```
 
 The browser check covers desktop and touch input, aiming, throw cadence, matching, score tokens, reset, and browser errors. The bank check verifies wall-assisted throws. The translucency check verifies that a rear ball's colour remains visible through a front shell. Screenshots are written to `/tmp/terebore-*.png`.
 
 The resource check exercises 24 throw/reset cycles and compares post-GC JavaScript heap and rendering/physics resource counts against a warmed baseline. It is a short churn regression, not a long-session guarantee.
+
+The lighting benchmark uses GPU timer queries, when supported, to measure median and p95 render time after warm-up. Its fixed viewport and reported canvas resolution allow before/after comparisons without relying on a vsync-limited FPS counter.
 
 The benchmark uses hardware-accelerated Chromium with a 2259 × 1271 CSS viewport and device scale 1.7. It reports the GPU, actual frame intervals, render resolution, draw counts, main-thread task time, and JavaScript heap during idle, aiming, and repeated throws. Set `SOFTWARE_RENDERER=1` to exercise the software fallback. Performance depends on hardware, browser, power settings, and pile size; software-renderer results are not hardware benchmarks.
 
@@ -71,6 +74,8 @@ Physics uses fixed 1/90-second steps, interpolation, a sweep-and-prune broadphas
 Ball-to-ball restitution starts at 0.221. A pair containing Clay applies a 0.9 multiplier; a pair containing Light applies 1.05. Each type applies once, so Clay–Clay is 10% softer, Light–Light is 5% bouncier, and Clay–Light combines both. Ball-to-room contacts start at restitution 0.56 and friction 0.22; ball-to-ball friction stays 0.12. Before solving contacts, the triangle floor applies a 0.9 restitution multiplier (0.504), based on the floor contact position. The floor outside the triangle, walls, and rail retain 0.56. Perfects use their primary colour’s physical material.
 
 The aiming guide is deliberately approximate: it uses the launch velocity and simple room reflections, suggests at most four bounces, and stops near the rail or pile. It does not run another physics world or predict matching outcomes. Input changes refresh it once per frame; a stationary aim is reused while the pile sleeps.
+
+Room surfaces use room-local directional daylight, soft corner occlusion, and distance-filtered plaster variation. Ball shadows combine a close contact core with a broader, height-dependent penumbra; faint family-coloured patches approximate reflected light on the floor and both walls. All nine patches per ball share one instanced draw and one radial texture. These are local lighting approximations, not ray-traced visibility or inter-ball shadowing.
 
 Sleeping shadow transforms and unchanged interface text are cached. Match mist uses a fixed particle pool and one draw. Impact compression follows the contact normal without changing collision geometry. Score-token reading time remains in real time.
 

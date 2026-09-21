@@ -38,6 +38,8 @@ const room = new THREE.Group();
 room.quaternion.copy(roomRotation);
 room.position.copy(roomOffset);
 scene.add(room);
+room.updateMatrixWorld(true);
+const worldToRoomLighting = room.matrixWorld.clone().invert();
 scene.background = new THREE.Color("#eeeae2");
 scene.fog = new THREE.Fog("#eeeae2", 18, 43);
 const renderer = new THREE.WebGLRenderer({
@@ -79,7 +81,7 @@ function box(
 ) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(...(size as [number, number, number])),
-    roomMaterial(color),
+    roomMaterial(color, worldToRoomLighting),
   );
   mesh.position.set(...(pos as [number, number, number]));
   mesh.rotation.y = rotation;
@@ -128,12 +130,9 @@ trayShape.lineTo(1.97, -2.99);
 trayShape.closePath();
 const tray = new THREE.Mesh(
   new THREE.ShapeGeometry(trayShape),
-  new THREE.MeshBasicMaterial({
-    color: "#adbf99",
-    toneMapped: false,
-    side: THREE.DoubleSide,
-  }),
+  roomMaterial("#adbf99", worldToRoomLighting),
 );
+tray.material.side = THREE.DoubleSide;
 tray.rotation.x = Math.PI / 2;
 tray.scale.y = 1;
 tray.position.y = 0.006;

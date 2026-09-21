@@ -8,11 +8,8 @@ export function contactTexture() {
       const r = Math.hypot((x - 31.5) / 31.5, (y - 31.5) / 31.5);
       const i = (y * size + x) * 4;
       data[i] = data[i + 1] = data[i + 2] = 255;
-      data[i + 3] = Math.round(
-        (Math.pow(Math.max(0, 1 - r), 2) * 0.65 +
-          Math.exp(-r * r * 24) * 0.35 * Math.max(0, 1 - r)) *
-          255,
-      );
+      const edge = 1 - THREE.MathUtils.smoothstep(r, 0.7, 1);
+      data[i + 3] = Math.round(Math.exp(-r * r * 3.8) * edge * 255);
     }
   const texture = new THREE.DataTexture(data, size, size);
   texture.magFilter = texture.minFilter = THREE.LinearFilter;

@@ -31,6 +31,7 @@ test("shadow growth releases GPU buffers and repeated reuse stays bounded", asyn
     for (const count of [8, 65, 131, 8, 65, 131, 8]) {
       const balls = Array.from({ length: count }, (_, id) => ({
         body: { id },
+        color: id % 5,
         mesh: { position: new THREE.Vector3(-2, 0.36, -2) },
       }));
       shadows.update(balls);
@@ -139,4 +140,82 @@ test("consecutive corner bonuses remain accurate in a merged score card", async 
   });
   await expect(page.locator("#points")).toHaveText("+110");
   await expect(page.locator("#message")).toHaveText("CLEAR CORNER · +50 BONUS");
+});
+
+test("room corners darken and contact shadows fade as balls lift, with visible colour spill", async ({
+  page,
+}) => {
+  await openGame(page);
+  const pixels = await page.evaluate(async () => {
+    const THREE = await import("/node_modules/three/build/three.module.js");
+    const { ContactShadows } = await import("/src/contact-shadows.ts");
+    const { roomMaterial } = await import("/src/room-art.ts");
+    const renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true });
+    renderer.setSize(256, 256);
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-4, 4, 4, -4, 0.1, 20);
+    camera.position.set(0, 8, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(0, 0, 0);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(8, 8),
+      roomMaterial("#cccccc"),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+    const gl = renderer.getContext();
+    const sample = (x, z) => {
+      const point = new THREE.Vector3(x, 0, z).project(camera);
+      const pixel = new Uint8Array(4);
+      gl.readPixels(
+        Math.floor((point.x + 1) * 128),
+        Math.floor((point.y + 1) * 128),
+        1,
+        1,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixel,
+      );
+      return [...pixel].slice(0, 3);
+    };
+    renderer.render(scene, camera);
+    const corner = sample(-2.85, -2.85),
+      open = sample(1, 1);
+    floor.material.dispose();
+    floor.material = new THREE.MeshBasicMaterial({ color: "#cccccc" });
+    const shadows = new ContactShadows(scene, 0.36);
+    const ball = {
+      body: { id: 1 },
+      color: 0,
+      mesh: { position: new THREE.Vector3(0, 0.36, 0) },
+    };
+    shadows.update([ball]);
+    renderer.render(scene, camera);
+    const grounded = sample(0, 0),
+      red = sample(-0.48, 0.08);
+    ball.mesh.position.y = 2;
+    shadows.update([ball]);
+    renderer.render(scene, camera);
+    const airborne = sample(0, 0);
+    shadows.forget(1);
+    ball.color = 1;
+    ball.mesh.position.y = 0.36;
+    shadows.update([ball]);
+    renderer.render(scene, camera);
+    const blue = sample(-0.48, 0.08);
+    shadows.dispose();
+    floor.geometry.dispose();
+    floor.material.dispose();
+    renderer.dispose();
+    return { corner, open, grounded, airborne, red, blue };
+  });
+  const brightness = (rgb) => rgb.reduce((a, b) => a + b, 0);
+  expect(brightness(pixels.corner)).toBeLessThan(
+    brightness(pixels.open) * 0.96,
+  );
+  expect(brightness(pixels.grounded)).toBeLessThan(
+    brightness(pixels.airborne) * 0.85,
+  );
+  expect(pixels.red[0]).toBeGreaterThan(pixels.blue[0]);
+  expect(pixels.blue[2]).toBeGreaterThan(pixels.red[2]);
 });
