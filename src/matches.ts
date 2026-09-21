@@ -15,17 +15,19 @@ export function findMatches(balls: MatchBall[], diameter: number): number[][] {
     if (visited.has(ball.id)) continue;
     const pending = [ball];
     const group: number[] = [];
+    let onlyClay = true;
     visited.add(ball.id);
     while (pending.length) {
       const current = pending.pop()!;
       group.push(current.id);
+      onlyClay &&= current.color === clayColor;
       for (const other of balls) {
         if (visited.has(other.id)) continue;
-        // Light bridges any touching colour. Clay only connects directly to Light.
+        // Light bridges colours and ignites connected Clay; Clay-only groups stay inert.
         const compatible =
           current.color === lightColor ||
           other.color === lightColor ||
-          (current.color !== clayColor && current.color === other.color);
+          current.color === other.color;
         if (!compatible) continue;
         if (
           Math.hypot(
@@ -40,7 +42,7 @@ export function findMatches(balls: MatchBall[], diameter: number): number[][] {
         }
       }
     }
-    if (group.length >= 3) groups.push(group);
+    if (group.length >= 3 && !onlyClay) groups.push(group);
   }
   return groups;
 }

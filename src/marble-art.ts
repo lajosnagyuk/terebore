@@ -138,11 +138,11 @@ export function createMarbleMaterial(
       outgoingLight = mix(pigment * 0.21, outgoingLight, edge);
       outgoingLight = mix(outgoingLight, cloudyTint, uLuminescence);
       outgoingLight += cloudyTint * uLuminescence * 0.25;
-      // A small luminous core seen through the cloudy shell, with a quiet halo.
-      float core = pow(facing, 240.0) * uPerfect;
-      float coreHalo = pow(facing, 28.0) * uPerfect;
-      outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), coreHalo * 0.24);
-      outgoingLight = mix(outgoingLight, vec3(1.0, 0.94, 0.78), core * 0.88);
+      // A diffuse inner light falls off before the thick shell, without a bright pinpoint.
+      float core = pow(facing, 24.0) * uPerfect;
+      float coreHalo = pow(facing, 8.0) * uPerfect;
+      outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), coreHalo * 0.14);
+      outgoingLight = mix(outgoingLight, vec3(1.0, 0.94, 0.78), core * 0.22);
       outgoingLight = mix(outgoingLight, vec3(1.0,.91,.67), uCelebration*.28);
       // Visual shell walls occupy 38.4% of the outer radius.
       // Optical thickness is independent of collision geometry.

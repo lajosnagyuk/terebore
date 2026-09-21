@@ -564,12 +564,14 @@ body.playing .footer-note {
 .pocket-ball[data-finish="perfect"]::after {
   content: "";
   position: absolute;
-  inset: 45%;
+  inset: 22%;
   border-radius: 50%;
-  background: #fff0c7;
-  box-shadow:
-    0 0 5px 2px #fffaf0aa,
-    0 0 11px 5px #fffaf044;
+  background: radial-gradient(
+    circle,
+    #fff0c74d,
+    #fffaf020 38%,
+    transparent 72%
+  );
 }
 @media (prefers-reduced-motion: reduce) {
   .chance-lights i,

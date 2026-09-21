@@ -371,6 +371,8 @@ for (const support of ["none", "outside"]) {
 for (const colors of [
   [0, 5, 1],
   [6, 5, 6],
+  [5, 6, 6],
+  [6, 6, 5],
 ]) {
   test(`Light clears its touching neighbours ${colors.join("-")}`, async ({
     page,

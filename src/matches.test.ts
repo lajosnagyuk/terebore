@@ -57,9 +57,7 @@ test("matching agrees with a connectivity oracle across seeded piles and input o
     const connected = pile.map((a) =>
       pile.map(
         (b) =>
-          (a.color === 5 ||
-            b.color === 5 ||
-            (a.color < 5 && a.color === b.color)) &&
+          (a.color === 5 || b.color === 5 || a.color === b.color) &&
           Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= 0.755,
       ),
     );
@@ -75,7 +73,7 @@ test("matching agrees with a connectivity oracle across seeded piles and input o
       ),
     ]
       .map((s) => s.split(",").map(Number))
-      .filter((g) => g.length >= 3);
+      .filter((g) => g.length >= 3 && g.some((id) => pile[id].color !== 6));
     assert.deepEqual(canonical(findMatches(pile, 0.72)), canonical(expected));
     assert.deepEqual(
       canonical(findMatches([...pile].reverse(), 0.72)),
@@ -96,17 +94,45 @@ test("Light bridges any two touching colours, including Clay, but pairs do not c
   }
   assert.deepEqual(findMatches([ball(0, 5, 0), ball(1, 6, 0.72)], 0.72), []);
 });
-test("Clay neither matches itself nor relays a wildcard to another Clay ball", () => {
+test("Clay alone stays inert and cannot bridge ordinary colours", () => {
   assert.deepEqual(
     findMatches([ball(0, 6, 0), ball(1, 6, 0.72), ball(2, 6, 1.44)], 0.72),
     [],
   );
   assert.deepEqual(
     findMatches([ball(0, 5, 0), ball(1, 6, 0.72), ball(2, 6, 1.44)], 0.72),
-    [],
+    [[0, 1, 2]],
   );
   assert.deepEqual(
     findMatches([ball(0, 0, 0), ball(1, 6, 0.72), ball(2, 0, 1.44)], 0.72),
+    [],
+  );
+});
+
+test("Light ignites the entire connected Clay cluster, regardless of traversal order", () => {
+  const pile = [
+    ball(0, 5, 0),
+    ...Array.from({ length: 5 }, (_, i) => ball(i + 1, 6, (i + 1) * 0.72)),
+  ];
+  // A separate Clay cluster and an ordinary colour touching the far end are excluded.
+  pile.push(
+    ball(6, 0, 4.32),
+    ball(7, 6, 8),
+    ball(8, 6, 8.72),
+    ball(9, 6, 9.44),
+  );
+  for (let offset = 0; offset < pile.length; offset++) {
+    const ordered = [...pile.slice(offset), ...pile.slice(0, offset)];
+    assert.deepEqual(
+      findMatches(ordered, 0.72).map((group) => group.sort((a, b) => a - b)),
+      [[0, 1, 2, 3, 4, 5]],
+    );
+  }
+  assert.deepEqual(
+    findMatches(
+      pile.filter((b) => b.color !== 5),
+      0.72,
+    ),
     [],
   );
 });

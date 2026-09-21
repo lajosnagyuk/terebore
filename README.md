@@ -4,7 +4,7 @@ A quiet browser game about throwing colourful, translucent balls into the corner
 
 No timer. No game over. Find your own rhythm.
 
-Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and only connects directly to Light; Clay balls cannot match each other. Clay stays at 1 in 42 draws. Light starts at the same chance, gaining another 1/42 for every completed match until a Light is drawn into the pocket; then it resets. A fresh round also resets the chance. Light caps at 41/42 so Clay keeps its original chance.
+Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and stays inert on its own. When Light touches a connected Clay cluster, it ignites the whole cluster; groups of three or more, including Light, clear together. Clay stays at 1 in 42 draws. Light starts at the same chance, gaining another 1/42 for every completed match until a Light is drawn into the pocket; then it resets. A fresh round also resets the chance. Light caps at 41/42 so Clay keeps its original chance.
 
 ## Play
 
@@ -66,6 +66,6 @@ Terebore uses TypeScript, Three.js, and cannon-es. Artwork, textures, and sounds
 
 See [Development notes](docs/development.md) for browser checks, performance measurements, and the code layout.
 
-Each primary colour also has a **Perfect** variant with a small warm-white heart. Perfects match the same colour normally. Each Perfect in a group adds 50% of the match score (one: 1.5×, two: 2×, three: 2.5×), rounded to the nearest whole point. The clear-triangle bonus is added afterwards. Light and Clay have no Perfect variants.
+Each primary colour also has a **Perfect** variant with a diffuse warm-white inner glow. Perfects match the same colour normally. Each Perfect in a group adds 50% of the match score (one: 1.5×, two: 2×, three: 2.5×), rounded to the nearest whole point. The clear-triangle bonus is added afterwards. Light and Clay have no Perfect variants.
 
 At base, one in six draws of a primary family is Perfect: one Perfect for every five ordinary balls. Each completed match containing that colour adds another one-sixth to its Perfect chance, capped at certainty. A colour gains only one step per match, even in large groups; a Light-assisted match can advance multiple colours. Drawing a Perfect resets only its colour, and a new round resets everything. The five segments beneath the logo brighten with the corresponding chances; the soft white underline tracks Light. All indicators are unlit at base.
