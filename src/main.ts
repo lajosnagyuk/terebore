@@ -18,7 +18,7 @@ import { pointerAim } from "./input";
 import "./style.css";
 import { roomMaterial, roomOutline } from "./room-art";
 import { throwReadiness, clearScore, nextChain } from "./cadence";
-import { palette } from "./palette";
+import { palette, lightColor } from "./palette";
 import { pickTarget, solveThrow, ThrowPreview, type AimTarget } from "./aiming";
 import {
   roomRotation,
@@ -130,7 +130,7 @@ trayShape.lineTo(1.97, -2.99);
 trayShape.closePath();
 const tray = new THREE.Mesh(
   new THREE.ShapeGeometry(trayShape),
-  roomMaterial("#adbf99", worldToRoomLighting),
+  roomMaterial("#9eb97d", worldToRoomLighting),
 );
 tray.material.side = THREE.DoubleSide;
 tray.rotation.x = Math.PI / 2;
@@ -518,12 +518,7 @@ const mistRotation = room.quaternion
 function puff(ball: Ball) {
   mist.emit(ball.mesh.position, palette[ball.color].color);
 }
-const scoreToken = new ScoreToken(
-  $(".toast"),
-  $("#points"),
-  $("#message"),
-  $("header"),
-);
+const scoreToken = new ScoreToken($(".score-effects"), $("header"));
 const matchLifecycle = new MatchLifecycle();
 let lastClear = -10,
   chain = 0;
@@ -567,22 +562,16 @@ function clearGroup(matched: Ball[], originatingShot: number) {
   ring.position.set(centre.x, 0.026, centre.z);
   room.add(ring);
   ripples.push({ mesh: ring, age: 0 });
-  const screen = room
-    .localToWorld(centre.clone().add(new THREE.Vector3(0, 1.1, 0)))
-    .project(camera);
+  const screen = room.localToWorld(centre.clone()).project(camera);
   const clearedCorner = clearsTriangle(
     matched.map((ball) => ball.body.position),
     balls
       .filter((ball) => !matched.includes(ball))
       .map((ball) => ball.body.position),
   );
-  const points =
-    clearScore(
-      matched.length,
-      banked,
-      chain,
-      matched.filter((ball) => ball.perfect).length,
-    ) + (clearedCorner ? clearCornerPoints : 0);
+  const perfects = matched.filter((ball) => ball.perfect).length;
+  const matchPoints = clearScore(matched.length, banked, chain, perfects);
+  const points = matchPoints + (clearedCorner ? clearCornerPoints : 0);
 
   score += points;
   $("#score").textContent = String(score);
@@ -610,7 +599,21 @@ function clearGroup(matched: Ball[], originatingShot: number) {
   audio.tone(523, 0.045, 0.6);
   clearTimeout(chordTimer);
   chordTimer = setTimeout(() => audio.tone(784, 0.025, 0.7), 100);
-  scoreToken.show(points, matched.length, banked, screen, chain, clearedCorner);
+  scoreToken.show(
+    points,
+    matched.length,
+    banked,
+    screen,
+    chain,
+    clearedCorner,
+    {
+      colors: matched.map((ball) => ball.color),
+      lights: matched.filter((ball) => ball.color === lightColor).length,
+      perfects,
+      perfectBonus: matchPoints - clearScore(matched.length, banked, chain),
+      shot: originatingShot,
+    },
+  );
 }
 function checkMatches() {
   const groups = findMatches(

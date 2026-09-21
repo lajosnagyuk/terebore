@@ -1,4 +1,4 @@
-import { test, expect, openGame } from "./fixtures.mjs";
+import { test, expect, openGame, matchingPile } from "./fixtures.mjs";
 
 test("shadow growth releases GPU buffers and repeated reuse stays bounded", async ({
   page,
@@ -54,7 +54,7 @@ test("shadow growth releases GPU buffers and repeated reuse stays bounded", asyn
   expect(result.remaining).toEqual({ buffers: 0, geometries: 0, textures: 0 });
 });
 
-test("score cards merge, recover during dismissal, and cancel their timers", async ({
+test("score numbers merge nearby clears and cancel their timers on reset", async ({
   page,
 }) => {
   await openGame(page);
@@ -62,28 +62,28 @@ test("score cards merge, recover during dismissal, and cancel their timers", asy
   await page.evaluate(async () => {
     const { ScoreToken } = await import("/src/score-token.ts");
     window.testToken = new ScoreToken(
-      document.querySelector(".toast"),
-      document.querySelector("#points"),
-      document.querySelector("#message"),
+      document.querySelector(".score-effects"),
       document.querySelector("header"),
     );
     window.testToken.show(30, 3, false, { x: 0, y: 0 }, 1);
   });
-  await page.clock.fastForward(4250);
+  await page.clock.fastForward(150);
   await page.evaluate(() =>
-    window.testToken.show(45, 3, true, { x: 0, y: 0 }, 2),
+    window.testToken.show(55, 3, true, { x: 0, y: 0 }, 2),
   );
-  await expect(page.locator("#points")).toHaveText("+75");
-  await expect(page.locator("#message")).toHaveText("6 TOGETHER · WALL BONUS");
-  await expect(page.locator(".toast")).toHaveClass(/show/);
+  await expect(page.locator(".score-points")).toHaveText("+85");
+  await expect(page.locator(".score-detail")).toHaveText(
+    "6 cleared · Multi\nWall +15 · Chain +10",
+  );
+  await expect(page.locator(".score-pop")).toHaveCount(1);
   await page.clock.fastForward(4250);
-  await expect(page.locator(".toast")).not.toHaveClass(/show/);
+  await expect(page.locator(".score-pop")).toHaveCount(0);
   await page.evaluate(() => {
     window.testToken.show(40, 3, false, { x: 0, y: 0 }, 2);
     window.testToken.dismiss();
   });
   await page.clock.fastForward(5000);
-  await expect(page.locator(".toast")).not.toHaveClass(/show/);
+  await expect(page.locator(".score-pop")).toHaveCount(0);
 });
 
 test("audio voices disconnect after playing and muted audio allocates none", async ({
@@ -123,23 +123,23 @@ test("audio voices disconnect after playing and muted audio allocates none", asy
   expect(result).toEqual({ mutedVoices: 0, created: 4, remaining: 0 });
 });
 
-test("consecutive corner bonuses remain accurate in a merged score card", async ({
+test("consecutive corner bonuses remain accurate in a combined score number", async ({
   page,
 }) => {
   await openGame(page);
   await page.evaluate(async () => {
     const { ScoreToken } = await import("/src/score-token.ts");
     const token = new ScoreToken(
-      document.querySelector(".toast"),
-      document.querySelector("#points"),
-      document.querySelector("#message"),
+      document.querySelector(".score-effects"),
       document.querySelector("header"),
     );
     token.show(55, 3, false, { x: 0, y: 0 }, 1, true);
     token.show(55, 3, false, { x: 0, y: 0 }, 1, true);
   });
-  await expect(page.locator("#points")).toHaveText("+110");
-  await expect(page.locator("#message")).toHaveText("CLEAR CORNER · +50 BONUS");
+  await expect(page.locator(".score-points")).toHaveText("+110");
+  await expect(page.locator(".score-detail")).toHaveText(
+    "6 cleared · Multi\nCorner +50",
+  );
 });
 
 test("room corners darken and contact shadows fade as balls lift, with visible colour spill", async ({
@@ -218,4 +218,52 @@ test("room corners darken and contact shadows fade as balls lift, with visible c
   );
   expect(pixels.red[0]).toBeGreaterThan(pixels.blue[0]);
   expect(pixels.blue[2]).toBeGreaterThan(pixels.red[2]);
+});
+
+test("independent score bursts stay bounded, rise slowly before fading, and clear on resize", async ({
+  page,
+}) => {
+  await openGame(page);
+  const result = await page.evaluate(async () => {
+    const { ScoreToken } = await import("/src/score-token.ts");
+    const token = new ScoreToken(
+      document.querySelector(".score-effects"),
+      document.querySelector("header"),
+    );
+    for (let shot = 1; shot <= 4; shot++)
+      token.show(30, 3, false, { x: 0, y: 0 }, 1, false, {
+        colors: [shot % 5],
+        shot,
+      });
+    const elements = [...document.querySelectorAll(".score-pop")];
+    const keyframes = elements[2].getAnimations()[0].effect.getKeyframes();
+    const styles = getComputedStyle(elements[2].querySelector(".score-points"));
+    const output = {
+      count: elements.length,
+      keyframes,
+      stroke: styles.webkitTextStrokeWidth,
+      background: getComputedStyle(elements[2]).backgroundColor,
+    };
+    token.dismiss();
+    return output;
+  });
+  expect(result.count).toBe(3);
+  expect(result.stroke).toBe("2px");
+  expect(result.background).toBe("rgba(0, 0, 0, 0)");
+  expect(result.keyframes.map((frame) => frame.offset)).toEqual([
+    0, 0.16, 0.79, 1,
+  ]);
+  expect(result.keyframes.map((frame) => frame.opacity)).toEqual([
+    "0",
+    "1",
+    "1",
+    "0",
+  ]);
+  await expect(page.locator(".score-pop")).toHaveCount(0);
+  // The actual game controller dismisses its score effects when the viewport changes.
+  await matchingPile(page);
+  await page.reload();
+  await expect(page.locator(".score-pop")).toHaveCount(1);
+  await page.setViewportSize({ width: 700, height: 600 });
+  await expect(page.locator(".score-pop")).toHaveCount(0);
 });

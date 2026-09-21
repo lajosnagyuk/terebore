@@ -212,11 +212,14 @@ test("reduced motion leaves a readable stationary score token", async ({
   await matchingPile(page);
   await openGame(page);
   await expect(page.locator("#score")).toHaveText("30");
-  await expect(page.locator(".toast")).toHaveCSS("opacity", "1");
-  const box = await page.locator(".toast").boundingBox();
+  await expect(page.locator(".score-pop")).toHaveCSS("opacity", "1");
+  const box = await page.locator(".score-pop").boundingBox();
   expect(box.x).toBeGreaterThanOrEqual(12);
-  expect(box.x + box.width).toBeLessThan(300);
-  await expect(page.locator(".toast")).toHaveCSS("pointer-events", "none");
+  expect(box.x + box.width).toBeLessThanOrEqual(900);
+  await page.waitForTimeout(250);
+  const later = await page.locator(".score-pop").boundingBox();
+  expect(Math.abs(later.y - box.y)).toBeLessThan(1);
+  await expect(page.locator(".score-pop")).toHaveCSS("pointer-events", "none");
 });
 
 test("an audio resume rejection cannot interrupt play", async ({ page }) => {
@@ -311,7 +314,7 @@ for (const height of [640, 844]) {
     await openGame(page);
     await expect(page.locator("#score")).toHaveText("30");
     await page.waitForTimeout(1200);
-    const token = await page.locator(".toast").boundingBox();
+    const token = await page.locator(".score-pop").boundingBox();
     for (const selector of [".hand-label", ".instructions", "header"]) {
       const other = await page.locator(selector).boundingBox();
       expect(
@@ -353,9 +356,9 @@ for (const support of ["none", "outside"]) {
     await matchingPile(page, support);
     await openGame(page);
     await expect(page.locator("#score")).toHaveText("55");
-    await expect(page.locator("#points")).toHaveText("+55");
-    await expect(page.locator("#message")).toHaveText(
-      "CLEAR CORNER · +25 BONUS",
+    await expect(page.locator(".score-points")).toHaveText("+55");
+    await expect(page.locator(".score-detail")).toHaveText(
+      "3 cleared\nCorner +25",
     );
     await expect(page.locator("#best")).toHaveText("55");
     expect((await state(page)).balls).toHaveLength(support === "none" ? 0 : 1);
@@ -423,6 +426,14 @@ for (const count of [1, 2, 3]) {
     await expect
       .poll(async () => (await state(page)).score)
       .toBe(55 + count * 15);
+    await expect(page.locator(".score-detail")).toContainText(
+      `${count} Perfect${count === 1 ? "" : "s"} +${count * 15}`,
+    );
+    expect(
+      await page
+        .locator(".score-pop")
+        .evaluate((el) => el.style.getPropertyValue("--score-color")),
+    ).toBe((await state(page)).palette[0].color);
     expect((await state(page)).balls).toHaveLength(0);
     expect((await state(page)).draw.perfectChances[0]).toBe(2 / 6);
     await expect(page.locator(".chance-lights")).toHaveAttribute(
@@ -483,6 +494,14 @@ test("Light clears two qualifying families together and counts itself once", asy
   ]);
   await openGame(page);
   await expect(page.locator("#score")).toHaveText("85");
+  await expect(page.locator(".score-detail")).toHaveText(
+    "5 cleared · Multi\nLight\nGroup +10 · Corner +25",
+  );
+  expect(
+    await page
+      .locator(".score-pop")
+      .evaluate((el) => el.style.getPropertyValue("--score-color")),
+  ).toBe("#39576f");
   expect((await state(page)).balls).toHaveLength(0);
   expect((await state(page)).draw.perfectChances.slice(0, 2)).toEqual([
     2 / 6,

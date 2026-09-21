@@ -9,11 +9,11 @@ export const palette: {
   dark: string;
   finish?: BallFinish;
 }[] = [
-  { name: "Cherry blossom", color: "#ee4776", dark: "#982747" },
-  { name: "Clear ocean", color: "#008dce", dark: "#00527c" },
-  { name: "Wild plum", color: "#924bc8", dark: "#512c78" },
-  { name: "Sunlight", color: "#ffca1e", dark: "#aa730c" },
-  { name: "Amazon green", color: "#4eb83e", dark: "#2a6727" },
-  { name: "Light", color: "#f4f1df", dark: "#b8b5a5", finish: "light" },
-  { name: "Clay", color: "#858680", dark: "#50534f", finish: "clay" },
+  { name: "Cherry blossom", color: "#ff2d68", dark: "#982747" },
+  { name: "Clear ocean", color: "#0089c8", dark: "#00527c" },
+  { name: "Wild plum", color: "#9038d3", dark: "#512c78" },
+  { name: "Sunlight", color: "#ffc815", dark: "#aa730c" },
+  { name: "Amazon green", color: "#43be30", dark: "#2a6727" },
+  { name: "Light", color: "#f6f3dd", dark: "#b8b5a5", finish: "light" },
+  { name: "Clay", color: "#82837b", dark: "#50534f", finish: "clay" },
 ];

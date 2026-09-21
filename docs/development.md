@@ -45,7 +45,7 @@ Open `/?stats` to display frame rate and canvas resolution. Development builds e
 | `src/main.ts` | Scene assembly, input, physics, scoring, and frame loop |
 | `src/ui.html`, `src/ui.ts` | Static interface markup, mounting, and DOM lookup |
 | `src/audio.ts` | Optional audio context and short-lived voices |
-| `src/score-token.ts` | Score-card merging, animation, and timer ownership |
+| `src/score-token.ts` | Pile-anchored score numbers, bounded bursts, bonus labels, and timer ownership |
 | `src/contact-shadows.ts`, `src/contact-texture.ts` | Cached shadow batch and owned GPU resources |
 | `src/aiming.ts` | Target selection, launch velocity, and lightweight aiming guide |
 | `src/collision-materials.ts` | Ball-pair restitution and shared room contacts |
@@ -77,7 +77,7 @@ The aiming guide is deliberately approximate: it uses the launch velocity and si
 
 Room surfaces use room-local directional daylight, soft corner occlusion, and distance-filtered plaster variation. Ball shadows combine a close contact core with a broader, height-dependent penumbra; faint family-coloured patches approximate reflected light on the floor and both walls. All nine patches per ball share one instanced draw and one radial texture. These are local lighting approximations, not ray-traced visibility or inter-ball shadowing.
 
-Sleeping shadow transforms and unchanged interface text are cached. Match mist uses a fixed particle pool and one draw. Impact compression follows the contact normal without changing collision geometry. Score-token reading time remains in real time.
+Sleeping shadow transforms and unchanged interface text are cached. Match mist uses a fixed particle pool and one draw. Impact compression follows the contact normal without changing collision geometry. Score numbers rise quickly, drift for reading, then accelerate upward while fading over 3.2 real-time seconds. Clears from one throw can share a burst; independent throws keep separate numbers, capped at three. Single families use their ball colour, while combined groups use slate-blue. Perfect labels show actual bonus points so merging does not imply an incorrect multiplier. Reduced-motion mode keeps the numbers stationary. Reset and resize remove active bursts.
 
 ## Assets and storage
 
