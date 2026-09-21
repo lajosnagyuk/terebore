@@ -9,8 +9,8 @@ export const palette: {
   dark: string;
   finish?: BallFinish;
 }[] = [
-  { name: "Cherry blossom", color: "#ff2d68", dark: "#982747" },
-  { name: "Clear ocean", color: "#0089c8", dark: "#00527c" },
+  { name: "Cherry blossom", color: "#f4386d", dark: "#982747" },
+  { name: "Clear ocean", color: "#007bc2", dark: "#004a78" },
   { name: "Wild plum", color: "#9038d3", dark: "#512c78" },
   { name: "Sunlight", color: "#ffc815", dark: "#aa730c" },
   { name: "Amazon green", color: "#43be30", dark: "#2a6727" },

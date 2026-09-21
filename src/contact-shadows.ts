@@ -129,14 +129,14 @@ export class ContactShadows {
       this.stamp(
         index++,
         1.34 + height * 0.55,
-        0.36 / (1 + height * 1.6),
+        0.414 / (1 + height * 1.6),
         this.shadowColor,
       );
       this.transform.position.set(p.x, 0.019, p.z);
       this.stamp(
         index++,
         0.72 + height * 0.16,
-        0.6 / (1 + height * 14),
+        0.69 / (1 + height * 14),
         this.shadowColor,
       );
       this.transform.position.set(p.x - 0.12, 0.02, p.z + 0.08);
@@ -156,14 +156,14 @@ export class ContactShadows {
         this.stamp(
           index++,
           1.15 + distance * 0.5,
-          0.25 * strength * strength,
+          0.2875 * strength * strength,
           this.shadowColor,
         );
         this.transform.position.y = p.y;
         this.stamp(
           index++,
           0.7,
-          (0.36 / (1 + distance * 16)) * strength,
+          (0.414 / (1 + distance * 16)) * strength,
           this.shadowColor,
         );
         this.stamp(index++, 1.75, 0.1 * strength * strength, bounce);

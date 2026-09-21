@@ -25,11 +25,14 @@ function studioMatcap() {
       );
       const softbox =
         Math.exp(-((nx + 0.4) ** 2 / 0.1 + (ny - 0.42) ** 2 / 0.15)) * 0.1;
+      // Deepen the unlit side, tapering back to the original daylight shading.
+      const shaded =
+        shade * (0.9 + 0.1 * THREE.MathUtils.smoothstep(key, 0, 0.52));
       const i = (y * size + x) * 4;
       data[i] =
         data[i + 1] =
         data[i + 2] =
-          Math.round(Math.pow(shade, 1 / 2.2) * 255);
+          Math.round(Math.pow(shaded, 1 / 2.2) * 255);
       data[i + 3] = Math.round(
         Math.min(1, highlight * 0.18 + softbox * 0.7) * 255,
       );
