@@ -77,7 +77,7 @@ world.addContactMaterial(
 world.addContactMaterial(
   new CANNON.ContactMaterial(marblePhysics, marblePhysics, {
     friction: 0.12,
-    restitution: 0.26,
+    restitution: 0.221,
   }),
 );
 const wallBodies = new Set<number>();
