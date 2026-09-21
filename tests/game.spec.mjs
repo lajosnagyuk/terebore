@@ -369,7 +369,7 @@ for (const support of ["none", "outside"]) {
 }
 
 for (const colors of [
-  [0, 5, 1],
+  [0, 5, 0],
   [6, 5, 6],
   [5, 6, 6],
   [6, 6, 5],
@@ -462,4 +462,45 @@ test("a Perfect moves from pocket to hand to pile with its identity intact", asy
   expect(
     (await state(page)).balls.some((ball) => ball.color === 2 && ball.perfect),
   ).toBe(true);
+});
+
+test("Light between different primary colours stays unmatched", async ({
+  page,
+}) => {
+  await matchingPile(page, "none", [0, 5, 1]);
+  await openGame(page);
+  await page.waitForTimeout(1500);
+  await expect(page.locator("#score")).toHaveText("0");
+  expect((await state(page)).balls).toHaveLength(3);
+});
+
+test("Light clears two qualifying families together and counts itself once", async ({
+  page,
+}) => {
+  await matchingPile(page, "none", [0, 5, 1], undefined, [
+    [0, -2.5, 0.38, -1.78],
+    [1, -1.06, 0.38, -1.78],
+  ]);
+  await openGame(page);
+  await expect(page.locator("#score")).toHaveText("85");
+  expect((await state(page)).balls).toHaveLength(0);
+  expect((await state(page)).draw.perfectChances.slice(0, 2)).toEqual([
+    2 / 6,
+    2 / 6,
+  ]);
+  expect((await state(page)).draw.lightChance).toBe(2 / 42);
+});
+test("Light completes a pair without clearing the other colour touching it", async ({
+  page,
+}) => {
+  await matchingPile(page, "none", [0, 0, 5], undefined, [
+    [1, -1.06, 0.38, -1.78],
+  ]);
+  await openGame(page);
+  await expect(page.locator("#score")).toHaveText("30");
+  expect((await state(page)).balls.map((ball) => ball.color)).toEqual([1]);
+  expect((await state(page)).draw.perfectChances.slice(0, 2)).toEqual([
+    2 / 6,
+    1 / 6,
+  ]);
 });

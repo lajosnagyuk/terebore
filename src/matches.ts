@@ -7,42 +7,75 @@ export interface MatchBall {
   y: number;
   z: number;
 }
-/** Connected groups count, including chains; a tiny tolerance absorbs solver separation. */
+/** Qualify each colour with Light separately, then merge clears sharing a wildcard. */
 export function findMatches(balls: MatchBall[], diameter: number): number[][] {
-  const visited = new Set<number>();
-  const groups: number[][] = [];
-  for (const ball of balls) {
-    if (visited.has(ball.id)) continue;
-    const pending = [ball];
-    const group: number[] = [];
-    let onlyClay = true;
-    visited.add(ball.id);
-    while (pending.length) {
-      const current = pending.pop()!;
-      group.push(current.id);
-      onlyClay &&= current.color === clayColor;
-      for (const other of balls) {
-        if (visited.has(other.id)) continue;
-        // Light bridges colours and ignites connected Clay; Clay-only groups stay inert.
-        const compatible =
-          current.color === lightColor ||
-          other.color === lightColor ||
-          current.color === other.color;
-        if (!compatible) continue;
-        if (
-          Math.hypot(
-            current.x - other.x,
-            current.y - other.y,
-            current.z - other.z,
-          ) <=
-          diameter + 0.035
-        ) {
-          visited.add(other.id);
+  const neighbours = balls.map(() => [] as number[]);
+  for (let i = 0; i < balls.length; i++) {
+    const a = balls[i];
+    for (let j = i + 1; j < balls.length; j++) {
+      const b = balls[j];
+      if (
+        a.color !== b.color &&
+        a.color !== lightColor &&
+        b.color !== lightColor
+      )
+        continue;
+      // A tiny tolerance absorbs separation introduced by the physics solver.
+      if (Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= diameter + 0.035) {
+        neighbours[i].push(j);
+        neighbours[j].push(i);
+      }
+    }
+  }
+  const parents = balls.map((_, i) => i);
+  const matched = new Set<number>();
+  const root = (index: number): number => {
+    while (parents[index] !== index) {
+      parents[index] = parents[parents[index]];
+      index = parents[index];
+    }
+    return index;
+  };
+  for (const color of new Set(balls.map((ball) => ball.color))) {
+    const visited = new Set<number>();
+    for (let i = 0; i < balls.length; i++) {
+      if (
+        visited.has(i) ||
+        (balls[i].color !== color && balls[i].color !== lightColor)
+      )
+        continue;
+      const pending = [i],
+        group: number[] = [];
+      let hasLight = false;
+      visited.add(i);
+      while (pending.length) {
+        const current = pending.pop()!;
+        group.push(current);
+        hasLight ||= balls[current].color === lightColor;
+        for (const other of neighbours[current]) {
+          if (
+            visited.has(other) ||
+            (balls[other].color !== color && balls[other].color !== lightColor)
+          )
+            continue;
+          visited.add(other);
           pending.push(other);
         }
       }
+      if (group.length < 3 || (color === clayColor && !hasLight)) continue;
+      // A shared Light clears once, together with every independently qualifying family.
+      for (const index of group) {
+        matched.add(index);
+        parents[root(index)] = root(group[0]);
+      }
     }
-    if (group.length >= 3 && !onlyClay) groups.push(group);
   }
-  return groups;
+  const groups = new Map<number, number[]>();
+  for (const index of matched) {
+    const key = root(index);
+    const group = groups.get(key) ?? [];
+    group.push(balls[index].id);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
 }

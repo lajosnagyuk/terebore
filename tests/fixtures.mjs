@@ -54,6 +54,7 @@ export async function matchingPile(
   support = "inside",
   colors = [0, 0, 0],
   perfects = [false, false, false],
+  extras = [],
 ) {
   await page.route("**/src/main.ts*", async (route) => {
     const response = await route.fetch();
@@ -64,6 +65,7 @@ export async function matchingPile(
       addBall(${colors[0]},new THREE.Vector3(-2.5,.38,-2.5),${perfects[0]});
       addBall(${colors[1]},new THREE.Vector3(-1.78,.38,-2.5),${perfects[1]});
       addBall(${colors[2]},new THREE.Vector3(-1.06,.38,-2.5),${perfects[2]});
+      ${extras.map(([color, x, y, z]) => `addBall(${color},new THREE.Vector3(${x},${y},${z}));`).join("\n")}
       ${support === "none" ? "" : support === "outside" ? "addBall(1,new THREE.Vector3(1,.38,1));" : "addBall(1,new THREE.Vector3(-1.78,1.1,-2.5));"}
     }\nfunction chooseColor`,
     );

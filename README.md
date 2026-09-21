@@ -4,7 +4,7 @@ A quiet browser game about throwing colourful, translucent balls into the corner
 
 No timer. No game over. Find your own rhythm.
 
-Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and stays inert on its own. When Light touches a connected Clay cluster, it ignites the whole cluster; groups of three or more, including Light, clear together. Clay stays at 1 in 42 draws. Light starts at the same chance, gaining another 1/42 for every completed match until a Light is drawn into the pocket; then it resets. A fresh round also resets the chance. Light caps at 41/42 so Clay keeps its original chance.
+Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that completes groups of three within each colour family. Light plus two blues clears; Light plus one blue and one green does not. If it completes several colour groups at once, they clear together and the shared Light scores only once. **Clay** is muted grey and stays inert on its own. When Light touches a connected Clay cluster, it ignites the whole cluster; groups of three or more, including Light, clear together. Clay stays at 1 in 42 draws. Light starts at the same chance, gaining another 1/42 for every completed match until a Light is drawn into the pocket; then it resets. A fresh round also resets the chance. Light caps at 41/42 so Clay keeps its original chance.
 
 ## Play
 
