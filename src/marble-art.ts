@@ -150,23 +150,3 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
   };
   return material;
 }
-
-export function contactTexture() {
-  const size = 64,
-    data = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      const r = Math.hypot((x - 31.5) / 31.5, (y - 31.5) / 31.5);
-      const i = (y * size + x) * 4;
-      data[i] = data[i + 1] = data[i + 2] = 255;
-      data[i + 3] = Math.round(
-        (Math.pow(Math.max(0, 1 - r), 2) * 0.65 +
-          Math.exp(-r * r * 24) * 0.35 * Math.max(0, 1 - r)) *
-          255,
-      );
-    }
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.magFilter = texture.minFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}

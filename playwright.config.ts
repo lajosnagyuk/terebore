@@ -34,7 +34,7 @@ export default defineConfig({
   projects: [
     {
       name: "development",
-      testMatch: "game.spec.mjs",
+      testMatch: ["game.spec.mjs", "rendering.spec.mjs"],
       use: { baseURL: "http://localhost:5174" },
     },
     {

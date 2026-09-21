@@ -3,6 +3,8 @@ export interface MatchCommit {
   at: number;
   shot: number;
 }
+const noCommits: readonly MatchCommit[] = Object.freeze([]);
+
 /** Contact dwell, committed celebrations, and reset are one explicit lifecycle. */
 export class MatchLifecycle {
   private pending = new Map<string, number>();
@@ -35,7 +37,9 @@ export class MatchLifecycle {
       if (!active.has(key)) this.pending.delete(key);
     return armed;
   }
-  takeReady(now: number): MatchCommit[] {
+  takeReady(now: number): readonly MatchCommit[] {
+    if (!this.committed.some((group) => now - group.at >= 0.3))
+      return noCommits;
     const ready = this.committed.filter((group) => now - group.at >= 0.3);
     this.committed = this.committed.filter((group) => now - group.at < 0.3);
     return ready;

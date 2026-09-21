@@ -1,0 +1,132 @@
+<div
+  id="world"
+  role="application"
+  aria-label="Terebore marble game. Point at the floor or walls, then click to throw. On touch, drag to aim and release. Arrow keys aim; Space throws."
+  tabindex="0"
+></div>
+<div class="ui">
+  <header>
+    <div class="brand">
+      <span class="brand-mark"><i></i><i></i><i></i></span
+      ><span class="wordmark">terebore</span
+      ><span class="edition">A QUIET LITTLE GAME</span>
+    </div>
+    <div class="scoreboard">
+      <div>
+        <div class="eyebrow">Your score</div>
+        <div class="score" id="score">0</div>
+      </div>
+      <div class="best">
+        <div class="eyebrow">Personal best</div>
+        <div class="score" id="best">0</div>
+      </div>
+    </div>
+  </header>
+  <section class="intro">
+    <div class="eyebrow">
+      <span class="live-dot"></span> No rush. Just a little rhythm.
+    </div>
+    <h1>A little corner<br />of calm.</h1>
+    <p>
+      One gentle throw. A happy little bounce.<br />Bring three of a colour
+      together.
+    </p>
+  </section>
+  <nav class="toolbar" aria-label="Game controls">
+    <button
+      class="icon-btn"
+      id="sound"
+      aria-label="Turn sound on"
+      title="Turn sound on"
+      aria-pressed="false"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4z" />
+        <path d="m16 9 5 6m0-6-5 6" />
+      </svg></button
+    ><button
+      class="icon-btn"
+      id="reset"
+      aria-label="Start fresh"
+      title="Start fresh"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 10a8 8 0 1 1 1 8M4 4v6h6" />
+      </svg></button
+    ><button
+      class="icon-btn"
+      id="help"
+      aria-label="How to play"
+      title="How to play"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1.5.7-1.5 1.5-1.5 2M12 17h.01" />
+      </svg>
+    </button>
+  </nav>
+  <div class="toast" role="status" aria-live="polite">
+    <strong id="points"></strong>
+    <div id="message"></div>
+  </div>
+  <div class="hand-label">IN YOUR HAND</div>
+  <div class="instructions">
+    <div class="gesture">
+      <svg viewBox="0 0 22 32">
+        <path d="M11 29V3m-6 6 6-6 6 6" />
+        <circle cx="11" cy="26" r="4" fill="#ecece2" />
+      </svg>
+    </div>
+    <strong id="hint">Point to aim · click to throw</strong>
+    <p>Choose a bounce. Let it go.</p>
+  </div>
+  <div class="bottom">
+    <div class="pocket">
+      <div class="pocket-ball"></div>
+      <div>
+        <div class="eyebrow">In your pocket</div>
+        <div class="pocket-text" id="next-name">Cherry blossom</div>
+      </div>
+    </div>
+    <div class="footer-note">
+      <span>✧</span> Nothing to win. A little peace to find.
+    </div>
+  </div>
+</div>
+<dialog id="help-dialog">
+  <h2>Find your little rhythm.</h2>
+  <p>
+    Point at the floor or either wall to choose your first bounce. The dots
+    follow your aim. Click to throw. On touch, drag to move the aim point above
+    your finger, then release to throw.
+  </p>
+  <div class="match-dots"><i></i><i></i><i></i></div>
+  <p>
+    When three or more marbles of the same colour touch, they turn into a soft
+    puff. Each marble brings 10 points. Larger groups bring a little bonus.
+  </p>
+  <p>
+    Try bouncing before the wooden retaining rail, landing inside it, or banking
+    off a wall. The dots suggest up to four room bounces, fading as the path
+    becomes less certain. At the rail or pile, the guide leaves the outcome to
+    your throw.
+  </p>
+  <p>
+    Let each throw land before the next. A wall-assisted match earns 15 extra
+    points; a chain reaction earns a little more. Matching marbles brighten
+    together, then clear.
+  </p>
+  <p>No timer. No game over. Take your time.</p>
+  <p class="key">
+    Keyboard: Arrow keys to move your aim · Space to throw · Esc to close
+  </p>
+  <button id="close-help">Lovely. Let’s play.</button>
+</dialog>
+<dialog id="reset-dialog">
+  <h2>A fresh little start?</h2>
+  <p>Your score and marbles will reset. Your personal best stays with you.</p>
+  <button id="confirm-reset">Start fresh</button>
+  <button id="cancel-reset" style="background: transparent; color: #68765e">
+    Keep playing
+  </button>
+</dialog>

@@ -27,3 +27,10 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 7

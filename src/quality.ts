@@ -27,7 +27,7 @@ export class AdaptiveQuality {
   }
   sample(ms: number): boolean {
     // Ignore debugger stops, background-tab resumes, and zero-duration frames.
-    if (ms <= 0 || ms > 1000) return false;
+    if (!Number.isFinite(ms) || ms <= 0 || ms > 1000) return false;
     this.samples.push(ms);
     this.windowMs += ms;
     if (

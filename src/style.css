@@ -34,10 +34,10 @@ button:focus-visible {
   position: fixed;
   inset: 0;
   touch-action: none;
-  cursor: grab;
+  cursor: crosshair;
 }
 #world:active {
-  cursor: grabbing;
+  cursor: crosshair;
 }
 canvas {
   display: block;
@@ -81,17 +81,17 @@ header {
 .brand-mark i:nth-child(1) {
   left: 0;
   top: 0;
-  background: #d7a4a7;
+  background: #f05282;
 }
 .brand-mark i:nth-child(2) {
   left: 15px;
   top: 7px;
-  background: #a9b799;
+  background: #009bbe;
 }
 .brand-mark i:nth-child(3) {
   left: 2px;
   top: 16px;
-  background: #aaa7c7;
+  background: #72c83f;
 }
 .wordmark {
   font-family: Manrope, sans-serif;
@@ -172,11 +172,12 @@ h1 {
   display: grid;
   place-items: center;
   border: 1px solid #8b8d791f;
-  background: #faf9f33d;
   border-radius: 50%;
   transition:
     background 0.2s,
     transform 0.2s;
+  border-color: #767b6270;
+  background: #faf9f28c;
 }
 .icon-btn:hover {
   background: #fff9;
@@ -205,11 +206,11 @@ h1 {
   gap: 15px;
   align-items: center;
   padding: 15px 22px 15px 16px;
-  background: #faf9f266;
-  border: 1px solid #ffffff75;
   border-radius: 18px;
-  box-shadow: 0 6px 25px #635d4310;
   backdrop-filter: blur(12px);
+  border: 1px solid #767b6266;
+  box-shadow: 0 5px 20px #635d4310;
+  background: #faf9f2c7;
 }
 .pocket-ball {
   width: 42px;
@@ -232,6 +233,7 @@ h1 {
   box-shadow:
     inset -4px -5px 8px #38333122,
     0 5px 8px #50483215;
+  border: 1.5px solid var(--dark);
 }
 .pocket-text {
   font-size: 12px;
@@ -258,13 +260,13 @@ h1 {
 .instructions strong {
   font-size: 12px;
   font-weight: 500;
-  color: #646b5b;
+  color: #45583e;
 }
 .instructions p {
   font-size: 10px;
-  color: #939588;
   margin: 8px 0 0;
   letter-spacing: 0.5px;
+  color: #747b68;
 }
 .hand-label {
   position: absolute;
@@ -297,8 +299,15 @@ h1 {
   text-align: center;
   pointer-events: none;
   user-select: none;
-  line-height: 1.8;
-  color: #647657;
+  padding: 9px 16px 11px;
+  width: 188px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid #80725855;
+  border-radius: 16px;
+  background: #fff6e8ed;
+  box-shadow: 0 8px 28px #4c49351a;
+  line-height: 1.5;
+  color: #3d584b;
 }
 .toast.show {
   opacity: 1;
@@ -306,32 +315,13 @@ h1 {
 }
 .toast strong {
   font-size: 29px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -1.5px;
 }
 .toast div {
-  font-size: 11px;
-  letter-spacing: 1px;
-}
-.power {
-  position: absolute;
-  bottom: 188px;
-  left: 50%;
-  width: 64px;
-  height: 3px;
-  border-radius: 3px;
-  background: #8c937522;
-  transform: translateX(-50%);
-  opacity: 0;
-}
-.power.active {
-  opacity: 1;
-}
-.power i {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: #899a75;
-  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
 }
 dialog {
   border: 1px solid #fff;
@@ -342,6 +332,7 @@ dialog {
   max-width: 380px;
   box-shadow: 0 20px 100px #343d3122;
   backdrop-filter: blur(18px);
+  border-color: #767b6280;
 }
 dialog::backdrop {
   background: #5e67532b;
@@ -376,15 +367,12 @@ dialog button {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #d6a0ab;
+  background: #f05282;
 }
 .key {
   font-size: 11px !important;
   border-top: 1px solid #8a8d791f;
   padding-top: 15px;
-}
-.hidden {
-  display: none !important;
 }
 @media (max-width: 640px) {
   header {
@@ -450,9 +438,6 @@ dialog button {
   .hand-label {
     bottom: 214px;
   }
-  .power {
-    bottom: 230px;
-  }
   .gesture {
     display: none;
   }
@@ -461,19 +446,6 @@ dialog button {
   }
 }
 
-/* Confident toy-box colours, with a quiet paper-and-wood room around them. */
-.brand-mark i:nth-child(1) {
-  background: #f05282;
-}
-.brand-mark i:nth-child(2) {
-  background: #009bbe;
-}
-.brand-mark i:nth-child(3) {
-  background: #72c83f;
-}
-.match-dots i {
-  background: #f05282;
-}
 #world:focus {
   outline: none;
 }
@@ -492,73 +464,9 @@ dialog button {
   pointer-events: none;
 }
 
-/* UI surfaces stay crisp and screen-aligned; room outlines follow 3D geometry. */
-.pocket {
-  border: 1px solid #767b6266;
-  box-shadow: 0 5px 20px #635d4310;
-  background: #faf9f2c7;
-}
-.pocket-ball {
-  border: 1.5px solid var(--dark);
-}
-.icon-btn {
-  border-color: #767b6270;
-  background: #faf9f28c;
-}
-dialog {
-  border-color: #767b6280;
-}
 .brand-mark i,
 .match-dots i {
   border: 1px solid #454a423d;
-}
-.power {
-  border: 1px solid #68745c66;
-  height: 5px;
-}
-
-.power.active {
-  bottom: 260px;
-}
-@media (max-width: 640px) {
-  .power.active {
-    bottom: 272px;
-  }
-}
-
-#world {
-  cursor: crosshair;
-}
-#world:active {
-  cursor: crosshair;
-}
-
-.toast {
-  padding: 9px 16px 11px;
-  width: 188px;
-  max-width: calc(100vw - 32px);
-  border: 1px solid #80725855;
-  border-radius: 16px;
-  background: #fff6e8ed;
-  box-shadow: 0 8px 28px #4c49351a;
-  line-height: 1.5;
-  color: #3d584b;
-}
-.toast strong {
-  font-size: 29px;
-  font-weight: 600;
-  letter-spacing: -1.5px;
-}
-.toast div {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.6px;
-}
-.instructions strong {
-  color: #45583e;
-}
-.instructions p {
-  color: #747b68;
 }
 
 /* Once the first throw teaches the controls, let the room take the foreground. */

@@ -1,7 +1,11 @@
+import { ScoreToken } from "./score-token";
+import { ContactShadows } from "./contact-shadows";
+import { GameAudio } from "./audio";
+import { mountUI, $, icons, svg } from "./ui";
 import * as THREE from "three";
 import { MatchMist } from "./smoke";
 import * as CANNON from "cannon-es";
-import { createMarbleMaterial, contactTexture } from "./marble-art";
+import { createMarbleMaterial } from "./marble-art";
 import { AdaptiveQuality } from "./quality";
 import { findMatches } from "./matches";
 import { MatchLifecycle } from "./match-lifecycle";
@@ -19,27 +23,7 @@ import {
   throwOrigin,
 } from "./room-feel";
 
-const icons = {
-  sound:
-    '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/>',
-  mute: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6m0-6-5 6"/>',
-  reset: '<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>',
-  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1.5.7-1.5 1.5-1.5 2M12 17h.01"/>',
-};
-const svg = (s: string) =>
-  `<svg viewBox="0 0 24 24" aria-hidden="true">${s}</svg>`;
-document.querySelector("#app")!.innerHTML = `
-<div id="world" role="application" aria-label="Terebore marble game. Point at the floor or walls, then click to throw. On touch, drag to aim and release. Arrow keys aim; Space throws." tabindex="0"></div>
-<div class="ui"><header><div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span class="wordmark">terebore</span><span class="edition">A QUIET LITTLE GAME</span></div><div class="scoreboard"><div><div class="eyebrow">Your score</div><div class="score" id="score">0</div></div><div class="best"><div class="eyebrow">Personal best</div><div class="score" id="best">0</div></div></div></header>
-<section class="intro"><div class="eyebrow"><span class="live-dot"></span> No rush. Just a little rhythm.</div><h1>A little corner<br>of calm.</h1><p>One gentle throw. A happy little bounce.<br>Bring three of a colour together.</p></section>
-<nav class="toolbar" aria-label="Game controls"><button class="icon-btn" id="sound" aria-label="Turn sound on" title="Turn sound on" aria-pressed="false">${svg(icons.mute)}</button><button class="icon-btn" id="reset" aria-label="Start fresh" title="Start fresh">${svg(icons.reset)}</button><button class="icon-btn" id="help" aria-label="How to play" title="How to play">${svg(icons.help)}</button></nav>
-<div class="toast" role="status" aria-live="polite"><strong id="points"></strong><div id="message"></div></div><div class="hand-label">IN YOUR HAND</div>
-<div class="instructions"><div class="gesture"><svg viewBox="0 0 22 32"><path d="M11 29V3m-6 6 6-6 6 6"/><circle cx="11" cy="26" r="4" fill="#ecece2"/></svg></div><strong id="hint">Point to aim · click to throw</strong><p>Choose a bounce. Let it go.</p></div>
-<div class="bottom"><div class="pocket"><div class="pocket-ball"></div><div><div class="eyebrow">In your pocket</div><div class="pocket-text" id="next-name">Cherry blossom</div></div></div><div class="footer-note"><span>✧</span> Nothing to win. A little peace to find.</div></div></div>
-<dialog id="help-dialog"><h2>Find your little rhythm.</h2><p>Point at the floor or either wall to choose your first bounce. The dots follow your aim. Click to throw. On touch, drag to move the aim point above your finger, then release to throw.</p><div class="match-dots"><i></i><i></i><i></i></div><p>When three or more marbles of the same colour touch, they turn into a soft puff. Each marble brings 10 points. Larger groups bring a little bonus.</p><p>Try bouncing before the wooden retaining rail, landing inside it, or banking off a wall. The dots suggest up to four room bounces, fading as the path becomes less certain. At the rail or pile, the guide leaves the outcome to your throw.</p><p>Let each throw land before the next. A wall-assisted match earns 15 extra points; a chain reaction earns a little more. Matching marbles brighten together, then clear.</p><p>No timer. No game over. Take your time.</p><p class="key">Keyboard: Arrow keys to move your aim · Space to throw · Esc to close</p><button id="close-help">Lovely. Let’s play.</button></dialog>
-<dialog id="reset-dialog"><h2>A fresh little start?</h2><p>Your score and marbles will reset. Your personal best stays with you.</p><button id="confirm-reset">Start fresh</button> <button id="cancel-reset" style="background:transparent;color:#68765e">Keep playing</button></dialog>`;
-const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
-  document.querySelector<T>(s)!;
+mountUI();
 if (matchMedia("(hover: none)").matches)
   $("#hint").textContent = "Drag to aim · release to throw";
 let score = 0;
@@ -173,113 +157,7 @@ function marbleMaterial(color: number) {
   return createMarbleMaterial(palette[color].color);
 }
 
-// All marble contact shadows share a single draw call. Wall contacts make the
-// back row feel nestled into the corner, rather than hovering above the floor.
-const shadowGeometry = new THREE.PlaneGeometry(1, 1);
-let shadowOpacity = new THREE.InstancedBufferAttribute(
-  new Float32Array(192),
-  1,
-);
-shadowOpacity.setUsage(THREE.DynamicDrawUsage);
-shadowGeometry.setAttribute("contactOpacity", shadowOpacity);
-const shadowMaterial = new THREE.MeshBasicMaterial({
-  map: contactTexture(),
-  color: "#514b39",
-  transparent: true,
-  opacity: 0.43,
-  depthWrite: false,
-  toneMapped: false,
-});
-shadowMaterial.onBeforeCompile = (shader) => {
-  shader.vertexShader =
-    "attribute float contactOpacity; varying float vContactOpacity;\n" +
-    shader.vertexShader.replace(
-      "#include <begin_vertex>",
-      "#include <begin_vertex>\nvContactOpacity = contactOpacity;",
-    );
-  shader.fragmentShader =
-    "varying float vContactOpacity;\n" +
-    shader.fragmentShader.replace(
-      "#include <alphamap_fragment>",
-      "#include <alphamap_fragment>\ndiffuseColor.a *= vContactOpacity;",
-    );
-};
-let contacts = new THREE.InstancedMesh(shadowGeometry, shadowMaterial, 192);
-// Draw the shared floor/wall shadow batch before translucent shells.
-contacts.renderOrder = -1;
-contacts.frustumCulled = false;
-contacts.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-room.add(contacts);
-const shadowTransform = new THREE.Object3D();
-const shadowPositions = new Map<number, THREE.Vector3>();
-function updateContacts() {
-  let changed = contacts.count !== balls.length * 3;
-  for (const b of balls) {
-    const previous = shadowPositions.get(b.body.id);
-    if (!previous || previous.distanceToSquared(b.mesh.position) > 0.00000001) {
-      changed = true;
-      if (previous) previous.copy(b.mesh.position);
-      else shadowPositions.set(b.body.id, b.mesh.position.clone());
-    }
-  }
-  if (!changed) return;
-  const needed = balls.length * 3;
-  if (needed > contacts.instanceMatrix.count) {
-    const old = contacts;
-    shadowOpacity = new THREE.InstancedBufferAttribute(
-      new Float32Array(needed * 2),
-      1,
-    );
-    shadowOpacity.setUsage(THREE.DynamicDrawUsage);
-    shadowGeometry.setAttribute("contactOpacity", shadowOpacity);
-    contacts = new THREE.InstancedMesh(
-      shadowGeometry,
-      shadowMaterial,
-      needed * 2,
-    );
-    // Draw the shared floor/wall shadow batch before translucent shells.
-    contacts.renderOrder = -1;
-    contacts.frustumCulled = false;
-    contacts.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    room.remove(old);
-    old.dispose();
-    room.add(contacts);
-  }
-  let index = 0;
-  for (const b of balls) {
-    const p = b.mesh.position;
-    const height = Math.max(0, p.y - radius);
-    const spread = 1.22 + height * 0.42;
-    shadowTransform.position.set(
-      p.x + height * 0.12,
-      0.018,
-      p.z - height * 0.06,
-    );
-    shadowTransform.rotation.set(-Math.PI / 2, 0, 0);
-    shadowTransform.scale.set(spread, spread, 1);
-    shadowTransform.updateMatrix();
-    shadowOpacity.setX(index, 1 / (1 + height * 1.8));
-    contacts.setMatrixAt(index++, shadowTransform.matrix);
-    for (let side = 0; side < 2; side++) {
-      const distance = (side === 0 ? p.x : p.z) + 3.04;
-      const size =
-        distance < 1.1 ? 1.05 * (1 - Math.max(0, distance - radius) / 0.8) : 0;
-      shadowTransform.position.set(
-        side === 0 ? -3.025 : p.x,
-        p.y,
-        side === 0 ? p.z : -3.025,
-      );
-      shadowTransform.rotation.set(0, side === 0 ? Math.PI / 2 : 0, 0);
-      shadowTransform.scale.set(Math.max(0, size), Math.max(0, size), 1);
-      shadowTransform.updateMatrix();
-      shadowOpacity.setX(index, Math.pow(Math.max(0, 1 - distance / 1.1), 1.5));
-      contacts.setMatrixAt(index++, shadowTransform.matrix);
-    }
-  }
-  shadowOpacity.needsUpdate = true;
-  contacts.count = index;
-  contacts.instanceMatrix.needsUpdate = true;
-}
+const contacts = new ContactShadows(room, radius);
 type Ball = {
   body: CANNON.Body;
   mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshMatcapMaterial>;
@@ -310,8 +188,7 @@ let hasTarget = true,
 let pointerPosition = { x: innerWidth * 0.5, y: innerHeight * 0.58 };
 const raycaster = new THREE.Raycaster();
 const inverseRoom = new THREE.Matrix4();
-let muted = true;
-let audio: AudioContext | undefined;
+const audio = new GameAudio();
 const handScene = new THREE.Scene();
 const handCamera = new THREE.PerspectiveCamera(
   35,
@@ -329,71 +206,6 @@ function updateHand() {
   $(".pocket-ball").style.setProperty("--ball", p.color);
   $(".pocket-ball").style.setProperty("--dark", p.dark);
   $("#next-name").textContent = p.name;
-}
-function playTone(freq: number, volume = 0.035, duration = 0.15) {
-  if (muted) return;
-  try {
-    audio ??= new AudioContext();
-    void audio.resume().catch(() => {});
-    const osc = audio.createOscillator(),
-      gain = audio.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, audio.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(
-      freq * 0.65,
-      audio.currentTime + duration,
-    );
-    gain.gain.setValueAtTime(volume, audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
-    osc.connect(gain).connect(audio.destination);
-    osc.start();
-    osc.stop(audio.currentTime + duration);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
-  } catch {
-    /* Audio is optional. */
-  }
-}
-// Two short, nearly fixed resonances: a rounded hollow body and a stiff shell.
-// A quick attack avoids clicks; pitch varies subtly between manufactured balls.
-function playShellImpact(
-  impact: number,
-  color: number,
-  ballContact: boolean,
-  volume: number,
-) {
-  if (muted) return;
-  try {
-    audio ??= new AudioContext();
-    void audio.resume().catch(() => {});
-    const now = audio.currentTime;
-    const pitch = 1 + (color - 2) * 0.012;
-    const fundamental = (ballContact ? 290 : 235) * pitch;
-    for (const [frequency, level, decay] of [
-      [fundamental, 1, 0.125],
-      [fundamental * 2.73, 0.17, 0.032],
-      [fundamental * 4.1, Math.min(0.07, impact * 0.007), 0.015],
-    ]) {
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.frequency.setValueAtTime(frequency * 1.04, now);
-      osc.frequency.exponentialRampToValueAtTime(frequency, now + 0.022);
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(volume * level, now + 0.002);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
-      osc.connect(gain).connect(audio.destination);
-      osc.start(now);
-      osc.stop(now + decay);
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-    }
-  } catch {
-    /* Audio is optional. */
-  }
 }
 let lastSound = 0;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -449,7 +261,7 @@ function addBall(color: number, position: THREE.Vector3) {
       }
       if (impact > 0.6 && elapsed - lastSound > 0.07) {
         const volume = Math.min(0.045, impact * 0.007);
-        playShellImpact(impact, color, e.body.mass > 0, volume);
+        audio.impact(impact, color, e.body.mass > 0, volume);
         lastSound = elapsed;
       }
     },
@@ -458,7 +270,7 @@ function addBall(color: number, position: THREE.Vector3) {
 }
 function removeBall(ball: Ball) {
   aimDirty = true;
-  shadowPositions.delete(ball.body.id);
+  contacts.forget(ball.body.id);
   if (activeThrow === ball) activeThrow = null;
   world.removeBody(ball.body);
   room.remove(ball.mesh);
@@ -513,7 +325,7 @@ function throwBall() {
   current = next;
   next = chooseColor();
   updateHand();
-  playTone(330, 0.018, 0.15);
+  audio.tone(330, 0.018, 0.15);
   aimDirty = true;
   $("#hint").textContent = "A little bounce. A little breath.";
   clearTimeout(hintTimer);
@@ -674,90 +486,12 @@ const mistRotation = room.quaternion
 function puff(ball: Ball) {
   mist.emit(ball.mesh.position, palette[ball.color].color);
 }
-let toastTimer: ReturnType<typeof setTimeout>;
-let toastMotion: Animation | undefined;
-let toastPoints = 0,
-  toastMarbles = 0,
-  toastBanked = false;
-function dismissToast() {
-  clearTimeout(toastTimer);
-  toastMotion?.cancel();
-  $(".toast").classList.remove("show");
-  toastPoints = toastMarbles = 0;
-  toastBanked = false;
-}
-function showScoreToken(
-  points: number,
-  count: number,
-  banked: boolean,
-  screen: THREE.Vector3,
-) {
-  const toast = $(".toast");
-  const active = toast.classList.contains("show");
-  toastPoints = active ? toastPoints + points : points;
-  toastMarbles = active ? toastMarbles + count : count;
-  toastBanked = (active && toastBanked) || banked;
-  $("#points").textContent = `+${toastPoints}`;
-  $("#message").textContent =
-    `${toastMarbles} TOGETHER${toastBanked ? " · WALL BONUS" : chain > 1 ? " · CHAIN " + chain : ""}`;
-  clearTimeout(toastTimer);
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!active) {
-    toastMotion?.cancel();
-    toast.classList.add("show");
-    const width = toast.offsetWidth;
-    const compact = innerWidth < 640;
-    const dockX = compact ? 16 + width / 2 : 24 + width / 2;
-    const dockY = compact
-      ? $("header").getBoundingClientRect().bottom + 20
-      : innerHeight * 0.63;
-    toast.style.left = `${dockX}px`;
-    toast.style.top = `${dockY}px`;
-    const startX = THREE.MathUtils.clamp(
-      ((screen.x + 1) * innerWidth) / 2,
-      width / 2 + 12,
-      innerWidth - width / 2 - 12,
-    );
-    const startY = THREE.MathUtils.clamp(
-      ((1 - screen.y) * innerHeight) / 2 - 35,
-      100,
-      innerHeight - 150,
-    );
-    const dx = compact ? 0 : startX - dockX,
-      dy = compact ? 18 : startY - dockY;
-    const pose = (x: number, y: number, tilt: number, scale = 1) =>
-      `translate(calc(-50% + ${x}px), ${y}px) rotate(${tilt}deg) scale(${scale})`;
-    toastMotion = toast.animate(
-      reduced
-        ? [{ opacity: 0 }, { opacity: 1 }]
-        : [
-            { transform: pose(dx, dy + 8, -3, 0.92), opacity: 0, offset: 0 },
-            {
-              transform: pose(dx * 0.94, dy - 16, -5),
-              opacity: 1,
-              offset: 0.16,
-            },
-            { transform: pose(-5, -5, 1.5), opacity: 1, offset: 0.78 },
-            { transform: pose(0, 0, 0), opacity: 1, offset: 1 },
-          ],
-      { duration: reduced ? 180 : 1050, easing: "cubic-bezier(.22,.65,.3,1)" },
-    );
-  } else if (toastMotion?.id === "score-exit") {
-    // A fresh clear keeps the same token, without jumping back into play.
-    toastMotion.cancel();
-  }
-  toastTimer = setTimeout(() => {
-    toastMotion = toast.animate(
-      [
-        { opacity: 1, transform: "translate(-50%, 0)" },
-        { opacity: 0, transform: `translate(-50%, ${reduced ? 0 : 8}px)` },
-      ],
-      { duration: 650, easing: "ease-in", fill: "forwards" },
-    );
-    toastMotion.id = "score-exit";
-    toastMotion.onfinish = dismissToast;
-  }, 4200);
-}
+const scoreToken = new ScoreToken(
+  $(".toast"),
+  $("#points"),
+  $("#message"),
+  $("header"),
+);
 const matchLifecycle = new MatchLifecycle();
 let lastClear = -10,
   chain = 0;
@@ -827,10 +561,10 @@ function clearGroup(matched: Ball[], originatingShot: number) {
   }
   // Removing supports must wake the pile so suspended marbles fall.
   for (const remaining of balls) remaining.body.wakeUp();
-  playTone(523, 0.045, 0.6);
+  audio.tone(523, 0.045, 0.6);
   clearTimeout(chordTimer);
-  chordTimer = setTimeout(() => playTone(784, 0.025, 0.7), 100);
-  showScoreToken(points, matched.length, banked, screen);
+  chordTimer = setTimeout(() => audio.tone(784, 0.025, 0.7), 100);
+  scoreToken.show(points, matched.length, banked, screen, chain);
 }
 function checkMatches() {
   const groups = findMatches(
@@ -848,7 +582,7 @@ function checkMatches() {
   for (const group of matchLifecycle.observe(groups, elapsed, shotSerial)) {
     for (const ball of balls)
       if (group.ids.includes(ball.body.id)) ball.clearingAt = elapsed;
-    playTone(660, 0.025, 0.22);
+    audio.tone(660, 0.025, 0.22);
   }
 }
 
@@ -1000,15 +734,15 @@ window.addEventListener("keydown", (e) => {
   }
 });
 $("#sound").onclick = () => {
-  muted = !muted;
-  $("#sound").innerHTML = svg(muted ? icons.mute : icons.sound);
-  $("#sound").setAttribute("aria-pressed", String(!muted));
+  audio.muted = !audio.muted;
+  $("#sound").innerHTML = svg(audio.muted ? icons.mute : icons.sound);
+  $("#sound").setAttribute("aria-pressed", String(!audio.muted));
   $("#sound").setAttribute(
     "aria-label",
-    muted ? "Turn sound on" : "Turn sound off",
+    audio.muted ? "Turn sound on" : "Turn sound off",
   );
-  $("#sound").title = muted ? "Turn sound on" : "Turn sound off";
-  playTone(440, 0.03, 0.4);
+  $("#sound").title = audio.muted ? "Turn sound on" : "Turn sound off";
+  audio.tone(440, 0.03, 0.4);
 };
 $("#help").onclick = () => {
   $<HTMLDialogElement>("#help-dialog").showModal();
@@ -1022,7 +756,7 @@ $("#reset").onclick = () => {
 $("#cancel-reset").onclick = () =>
   $<HTMLDialogElement>("#reset-dialog").close();
 $("#confirm-reset").onclick = () => {
-  for (const b of [...balls]) removeBall(b);
+  for (const b of balls) removeBall(b);
   mist.clear();
   document.body.classList.remove("playing");
   matchLifecycle.reset();
@@ -1057,7 +791,7 @@ $("#confirm-reset").onclick = () => {
   hasTarget = true;
   cancelDrag();
   lastThrow = -10;
-  dismissToast();
+  scoreToken.dismiss();
   seed();
   updateHand();
   $<HTMLDialogElement>("#reset-dialog").close();
@@ -1069,7 +803,7 @@ let handBaseScale = 0.38;
 let handAvailability = 1;
 function resize() {
   if (drag) cancelDrag();
-  dismissToast();
+  scoreToken.dismiss();
   camera.aspect = innerWidth / innerHeight;
   camera.fov = innerWidth < 640 ? 53 : 40;
   camera.updateProjectionMatrix();
@@ -1133,10 +867,11 @@ function frame(now: number) {
   const dt = Math.min(frameMs / 1000, 0.05) * gameplaySpeed;
   previous = now;
   if (document.hidden) return;
-  if (!dialogOpen() && quality.sample(frameMs)) {
+  const paused = dialogOpen();
+  if (!paused && quality.sample(frameMs)) {
     renderer.setPixelRatio(quality.ratio);
   }
-  if (!dialogOpen()) {
+  if (!paused) {
     elapsed += dt;
     world.step(1 / 90, dt, 6);
     for (const celebration of matchLifecycle.takeReady(elapsed)) {
@@ -1145,7 +880,7 @@ function frame(now: number) {
         celebration.shot,
       );
     }
-    for (const r of [...ripples]) {
+    for (const r of ripples) {
       r.age += dt;
       r.mesh.scale.setScalar(0.35 + r.age * 2.5);
       r.mesh.material.opacity = Math.max(0, 0.24 * (1 - r.age / 0.8));
@@ -1155,7 +890,7 @@ function frame(now: number) {
         ripples = ripples.filter((x) => x !== r);
       }
     }
-    for (const b of [...balls]) {
+    for (const b of balls) {
       b.mesh.position.copy(b.body.interpolatedPosition);
       b.mesh.quaternion.copy(b.body.interpolatedQuaternion);
       const charge =
@@ -1231,7 +966,7 @@ function frame(now: number) {
   hand.scale.set(scale * (1 + grip), scale * (1 - grip), scale);
   if (
     aiming &&
-    !dialogOpen() &&
+    !paused &&
     (aimDirty ||
       (elapsed - lastPreview > 0.25 &&
         balls.some((b) => b.body.sleepState !== CANNON.Body.SLEEPING)))
@@ -1250,7 +985,7 @@ function frame(now: number) {
       : 0,
   );
   guideBufferHeight.value = renderer.domElement.height;
-  updateContacts();
+  contacts.update(balls);
   renderer.info.reset();
   renderer.autoClear = true;
   renderer.render(scene, camera);
@@ -1313,6 +1048,10 @@ if (import.meta.env.DEV)
         calls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         textures: renderer.info.memory.textures,
+        geometries: renderer.info.memory.geometries,
+        programs: renderer.info.programs?.length ?? 0,
+        bodies: world.bodies.length,
+        shadowCapacity: contacts.mesh.instanceMatrix.count,
       },
     }),
   });

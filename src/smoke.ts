@@ -18,6 +18,7 @@ export class MatchMist {
   }));
   private readonly transform = new THREE.Object3D();
   private cursor = 0;
+  private active = false;
   constructor(texture: THREE.Texture) {
     this.geometry.setAttribute("mistOpacity", this.opacity);
     this.opacity.setUsage(THREE.DynamicDrawUsage);
@@ -51,6 +52,7 @@ export class MatchMist {
     this.mesh.count = 0;
   }
   emit(position: THREE.Vector3, color: string) {
+    this.active = true;
     for (let i = 0; i < 5; i++) {
       const p = this.particles[this.cursor++ % this.capacity];
       p.position.copy(position);
@@ -64,10 +66,12 @@ export class MatchMist {
     }
   }
   clear() {
+    this.active = false;
     for (const p of this.particles) p.age = 2;
     this.mesh.count = 0;
   }
   update(dt: number, cameraRotation: THREE.Quaternion) {
+    if (!this.active) return;
     this.transform.quaternion.copy(cameraRotation);
     let count = 0;
     for (const p of this.particles) {
@@ -84,6 +88,7 @@ export class MatchMist {
       count++;
     }
     this.mesh.count = count;
+    this.active = count > 0;
     if (count) {
       this.mesh.instanceMatrix.needsUpdate = true;
       this.mesh.instanceColor!.needsUpdate = true;

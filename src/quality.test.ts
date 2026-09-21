@@ -43,3 +43,12 @@ test("resize preserves the quality fraction, and tab reset forgets old timing", 
   q.sample(5000);
   assert.equal(q.ratio / q.ceiling, fraction);
 });
+
+test("invalid timing samples do not poison later measurements", () => {
+  const quality = new AdaptiveQuality(800, 600, 1);
+  for (const value of [NaN, Infinity, -Infinity, 0, -1])
+    assert.equal(quality.sample(value), false);
+  for (let i = 0; i < 60; i++) quality.sample(16);
+  assert.equal(quality.frameMs, 16);
+  assert.equal(quality.ratio, 1);
+});

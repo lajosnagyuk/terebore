@@ -14,6 +14,14 @@ const page = await browser.newPage({
   viewport: { width: 2259, height: 1271 },
   deviceScaleFactor: 1.7,
 });
+const cdp = await page.context().newCDPSession(page);
+await cdp.send("Performance.enable");
+const metrics = async () =>
+  Object.fromEntries(
+    (await cdp.send("Performance.getMetrics")).metrics.map(
+      ({ name, value }) => [name, value],
+    ),
+  );
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => {
@@ -28,7 +36,8 @@ try {
     return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "unknown";
   });
   async function measure() {
-    return page.evaluate(
+    const before = await metrics();
+    const result = await page.evaluate(
       () =>
         new Promise((resolve) => {
           const samples = [];
@@ -55,6 +64,14 @@ try {
           requestAnimationFrame(tick);
         }),
     );
+    const after = await metrics();
+    return {
+      ...result,
+      mainThreadTaskMs: Math.round(
+        (after.TaskDuration - before.TaskDuration) * 1000,
+      ),
+      jsHeapUsedBytes: after.JSHeapUsedSize,
+    };
   }
   const idle = await measure();
   assert.ok(idle.width * idle.height <= 1_600_000);

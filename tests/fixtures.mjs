@@ -1,7 +1,15 @@
+import { mkdir, writeFile } from "node:fs/promises";
 import { test as base, expect } from "@playwright/test";
 export { expect };
 export const test = base.extend({
-  page: async ({ page }, use) => {
+  page: async ({ page }, use, testInfo) => {
+    const measure = testInfo.project.name === "development";
+    if (measure)
+      await page.coverage.startJSCoverage({ resetOnNavigation: false });
+    // Optional remote typography must not make gameplay checks depend on the network.
+    await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) =>
+      route.fulfill({ status: 200, contentType: "text/css", body: "" }),
+    );
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => {
@@ -17,6 +25,16 @@ export const test = base.extend({
     try {
       await use(page);
     } finally {
+      if (measure) {
+        const coverage = (await page.coverage.stopJSCoverage()).filter(
+          (entry) => /\/src\/[^/?]+\.ts(?:\?|$)/.test(entry.url),
+        );
+        await mkdir(testInfo.outputDir, { recursive: true });
+        await writeFile(
+          testInfo.outputPath("browser-coverage.json"),
+          JSON.stringify(coverage),
+        );
+      }
       expect(errors, "Uncaught or rendering errors").toEqual([]);
     }
   },
@@ -45,6 +63,9 @@ export async function matchingPile(page) {
     }\nfunction chooseColor`,
     );
     expect(body).not.toBe(original);
-    await route.fulfill({ response, body });
+    await route.fulfill({
+      response,
+      body: "/* test-only starting pile */\n" + body,
+    });
   });
 }
