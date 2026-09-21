@@ -1,3 +1,4 @@
+import { chooseNextColor } from "./color-selection";
 import { clearsTriangle, clearCornerPoints } from "./play-area";
 import { ScoreToken } from "./score-token";
 import { ContactShadows } from "./contact-shadows";
@@ -155,7 +156,11 @@ room.add(roomOutline(seamGeometry, "#777464", 0.6));
 const radius = 0.36,
   geometry = new THREE.SphereGeometry(radius, 32, 20);
 function marbleMaterial(color: number) {
-  return createMarbleMaterial(palette[color].color);
+  return createMarbleMaterial(
+    palette[color].color,
+    Math.random(),
+    palette[color].finish,
+  );
 }
 
 const contacts = new ContactShadows(room, radius);
@@ -204,6 +209,7 @@ function updateHand() {
   hand.material.dispose();
   hand.material = marbleMaterial(current);
   const p = palette[next];
+  $(".pocket-ball").dataset.finish = p.finish ?? "normal";
   $(".pocket-ball").style.setProperty("--ball", p.color);
   $(".pocket-ball").style.setProperty("--dark", p.dark);
   $("#next-name").textContent = p.name;
@@ -292,9 +298,7 @@ function seed() {
   for (const [x, z, c] of positions) addBall(c, new THREE.Vector3(x, 0.38, z));
 }
 function chooseColor() {
-  if (balls.length && Math.random() < 0.8)
-    return balls[Math.floor(Math.random() * balls.length)].color;
-  return Math.floor(Math.random() * palette.length);
+  return chooseNextColor(balls.map((ball) => ball.color));
 }
 function trajectory() {
   return solveThrow(target);

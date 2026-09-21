@@ -4,6 +4,8 @@ A quiet browser game about throwing colourful, translucent balls into the corner
 
 No timer. No game over. Find your own rhythm.
 
+Two rare playtest colours join the five primary colours: **Light** is a softly luminous wildcard that connects any touching colours into groups of three or more. **Clay** is muted grey and only connects directly to Light; Clay balls cannot match each other. Each special appears about one-eighth as often as an average primary colour (1 in 42 draws).
+
 ## Play
 
 Point at the floor or either wall to aim, then click to throw. On a touchscreen, drag to aim above your finger and release. A small ring keeps the target visible. Throw strength is chosen automatically.

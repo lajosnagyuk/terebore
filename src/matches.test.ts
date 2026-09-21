@@ -47,7 +47,7 @@ test("matching agrees with a connectivity oracle across seeded piles and input o
     const pile = Array.from({ length: 24 }, (_, id) =>
       ball(
         id,
-        Math.floor(random() * 3),
+        Math.floor(random() * (trial < 50 ? 3 : 7)),
         random() * 2,
         random() * 2,
         random() * 2,
@@ -57,7 +57,9 @@ test("matching agrees with a connectivity oracle across seeded piles and input o
     const connected = pile.map((a) =>
       pile.map(
         (b) =>
-          a.color === b.color &&
+          (a.color === 5 ||
+            b.color === 5 ||
+            (a.color < 5 && a.color === b.color)) &&
           Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= 0.755,
       ),
     );
@@ -80,4 +82,31 @@ test("matching agrees with a connectivity oracle across seeded piles and input o
       canonical(expected),
     );
   }
+});
+
+test("Light bridges any two touching colours, including Clay, but pairs do not clear", () => {
+  for (const colors of [
+    [0, 5, 1],
+    [6, 5, 6],
+    [5, 5, 5],
+  ]) {
+    const pile = colors.map((color, id) => ball(id, color, id * 0.72));
+    assert.equal(findMatches(pile, 0.72)[0].length, 3);
+    assert.equal(findMatches([...pile].reverse(), 0.72)[0].length, 3);
+  }
+  assert.deepEqual(findMatches([ball(0, 5, 0), ball(1, 6, 0.72)], 0.72), []);
+});
+test("Clay neither matches itself nor relays a wildcard to another Clay ball", () => {
+  assert.deepEqual(
+    findMatches([ball(0, 6, 0), ball(1, 6, 0.72), ball(2, 6, 1.44)], 0.72),
+    [],
+  );
+  assert.deepEqual(
+    findMatches([ball(0, 5, 0), ball(1, 6, 0.72), ball(2, 6, 1.44)], 0.72),
+    [],
+  );
+  assert.deepEqual(
+    findMatches([ball(0, 0, 0), ball(1, 6, 0.72), ball(2, 0, 1.44)], 0.72),
+    [],
+  );
 });

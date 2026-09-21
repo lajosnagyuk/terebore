@@ -1,3 +1,5 @@
+import { lightColor, clayColor } from "./palette";
+
 export interface MatchBall {
   id: number;
   color: number;
@@ -18,7 +20,13 @@ export function findMatches(balls: MatchBall[], diameter: number): number[][] {
       const current = pending.pop()!;
       group.push(current.id);
       for (const other of balls) {
-        if (visited.has(other.id) || other.color !== current.color) continue;
+        if (visited.has(other.id)) continue;
+        // Light bridges any touching colour. Clay only connects directly to Light.
+        const compatible =
+          current.color === lightColor ||
+          other.color === lightColor ||
+          (current.color !== clayColor && current.color === other.color);
+        if (!compatible) continue;
         if (
           Math.hypot(
             current.x - other.x,

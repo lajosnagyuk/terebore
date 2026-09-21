@@ -367,3 +367,24 @@ for (const support of ["none", "outside"]) {
     await expect(page.locator("#score")).toHaveText("55");
   });
 }
+
+for (const colors of [
+  [0, 5, 1],
+  [6, 5, 6],
+]) {
+  test(`Light clears its touching neighbours ${colors.join("-")}`, async ({
+    page,
+  }) => {
+    await matchingPile(page, "none", colors);
+    await openGame(page);
+    await expect(page.locator("#score")).toHaveText("55");
+    expect((await state(page)).balls).toHaveLength(0);
+  });
+}
+test("three Clay balls remain inert in the physical pile", async ({ page }) => {
+  await matchingPile(page, "none", [6, 6, 6]);
+  await openGame(page);
+  await page.waitForTimeout(1500);
+  await expect(page.locator("#score")).toHaveText("0");
+  expect((await state(page)).balls).toHaveLength(3);
+});

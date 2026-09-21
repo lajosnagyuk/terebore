@@ -513,3 +513,17 @@ body.playing .footer-note {
   stroke: #3d584b;
   stroke-width: 2;
 }
+
+.pocket-ball[data-finish="light"] {
+  box-shadow:
+    inset -3px -4px 7px #77705c15,
+    0 0 9px #fff6d97a;
+}
+.pocket-ball[data-finish="clay"] {
+  background: radial-gradient(
+    ellipse at 35% 30%,
+    #a0a19a,
+    #858680 48%,
+    #50534f
+  );
+}

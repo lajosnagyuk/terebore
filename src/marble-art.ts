@@ -1,3 +1,4 @@
+import type { BallFinish } from "./palette";
 import * as THREE from "three";
 
 // Bake soft studio reflections once. Sorted front surfaces transmit the actual
@@ -70,7 +71,11 @@ function pigmentClouds() {
 }
 const matcap = studioMatcap(),
   map = pigmentClouds();
-export function createMarbleMaterial(color: string, variant = Math.random()) {
+export function createMarbleMaterial(
+  color: string,
+  variant = Math.random(),
+  finish: BallFinish = "normal",
+) {
   const tint = new THREE.Color(color);
   tint.offsetHSL(
     (variant - 0.5) * 0.012,
@@ -92,6 +97,8 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
   material.userData.compression = compression;
   material.userData.impactNormal = impactNormal;
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.uLuminescence = { value: finish === "light" ? 0.16 : 0 };
+    shader.uniforms.uMatte = { value: finish === "clay" ? 0.8 : 0 };
     shader.uniforms.uCelebration = glow;
     shader.uniforms.uCompression = compression;
     shader.uniforms.uImpactNormal = impactNormal;
@@ -102,7 +109,8 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
         "#include <begin_vertex>\ntransformed = transformed * (1.0 + uCompression * .5) - uImpactNormal * dot(transformed, uImpactNormal) * uCompression * 1.5;",
       );
     shader.fragmentShader =
-      "uniform float uCelebration;\n" + shader.fragmentShader;
+      "uniform float uCelebration; uniform float uLuminescence; uniform float uMatte;\n" +
+      shader.fragmentShader;
     // A thick shell has its longest optical path just inside the silhouette.
     // Keep a narrow ink edge; the soft inner crescent gives a sense of depth.
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -124,9 +132,11 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
       float halo = exp(-pow((facing - 0.24) / 0.13, 2.0));
       outgoingLight += mix(pigment, vec3(1.0, 0.94, 0.78), 0.34)
         * halo * (0.06 + lowerLight * 0.18);
-      outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), matcapColor.a);
+      outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), matcapColor.a * (1.0 - uMatte));
       float edge = smoothstep(0.065, 0.18, facing);
       outgoingLight = mix(pigment * 0.21, outgoingLight, edge);
+      outgoingLight = mix(outgoingLight, cloudyTint, uLuminescence);
+      outgoingLight += cloudyTint * uLuminescence * 0.25;
       outgoingLight = mix(outgoingLight, vec3(1.0,.91,.67), uCelebration*.28);
       // Visual shell walls occupy 38.4% of the outer radius.
       // Optical thickness is independent of collision geometry.
@@ -143,6 +153,7 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
       // Surface reflections and match flashes remain on the front of the shell.
       transmission *= 1.0 - matcapColor.a;
       transmission *= 1.0 - uCelebration * .8;
+      transmission *= 1.0 - uMatte * 0.45;
       diffuseColor.a = 1.0 - transmission;
 
       `,

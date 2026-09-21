@@ -49,16 +49,20 @@ export async function reset(page) {
   await page.locator("#confirm-reset").click();
 }
 /** Inject a deterministic starting pile into the test browser only. */
-export async function matchingPile(page, support = "inside") {
+export async function matchingPile(
+  page,
+  support = "inside",
+  colors = [0, 0, 0],
+) {
   await page.route("**/src/main.ts*", async (route) => {
     const response = await route.fetch();
     const original = await response.text();
     const body = original.replace(
       /function seed\(\) \{[\s\S]*?\n\}\nfunction chooseColor/,
       `function seed() {
-      addBall(0,new THREE.Vector3(-2.5,.38,-2.5));
-      addBall(0,new THREE.Vector3(-1.78,.38,-2.5));
-      addBall(0,new THREE.Vector3(-1.06,.38,-2.5));
+      addBall(${colors[0]},new THREE.Vector3(-2.5,.38,-2.5));
+      addBall(${colors[1]},new THREE.Vector3(-1.78,.38,-2.5));
+      addBall(${colors[2]},new THREE.Vector3(-1.06,.38,-2.5));
       ${support === "none" ? "" : support === "outside" ? "addBall(1,new THREE.Vector3(1,.38,1));" : "addBall(1,new THREE.Vector3(-1.78,1.1,-2.5));"}
     }\nfunction chooseColor`,
     );
