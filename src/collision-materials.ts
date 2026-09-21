@@ -1,7 +1,7 @@
 import { ContactMaterial, Material, type World } from "cannon-es";
 import { clayColor, lightColor } from "./palette";
 
-/** Special bounce applies to ball pairs only; every room surface keeps its original feel. */
+/** Ball-pair modifiers are separate from the shared room-contact baseline. */
 export function createCollisionMaterials(world: World) {
   const ordinary = new Material("marble");
   const clay = new Material("clay");

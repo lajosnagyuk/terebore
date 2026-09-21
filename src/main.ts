@@ -1,3 +1,4 @@
+import { PlayAreaSolver } from "./play-area-solver";
 import { createCollisionMaterials } from "./collision-materials";
 import { ColorDraw } from "./color-selection";
 import { clearsTriangle, clearCornerPoints } from "./play-area";
@@ -67,8 +68,6 @@ const world = new CANNON.World({
   allowSleep: true,
 });
 world.broadphase = new CANNON.SAPBroadphase(world);
-world.solver = new CANNON.GSSolver();
-(world.solver as CANNON.GSSolver).iterations = 12;
 const collisionMaterials = createCollisionMaterials(world);
 const wallBodies = new Set<number>();
 function box(
@@ -93,8 +92,9 @@ function box(
   );
   mesh.add(edges);
   room.add(mesh);
+  let body: CANNON.Body | undefined;
   if (physical) {
-    const body = new CANNON.Body({
+    body = new CANNON.Body({
       mass: 0,
       material: collisionMaterials.room,
       shape: new CANNON.Box(
@@ -108,9 +108,12 @@ function box(
     world.addBody(body);
     if (size[1] > 10) wallBodies.add(body.id);
   }
-  return mesh;
+  return body;
 }
-box([50, 0.3, 50], [10, -0.15, 10], "#e5d3b3");
+const floor = box([50, 0.3, 50], [10, -0.15, 10], "#e5d3b3")!;
+const solver = new PlayAreaSolver(floor);
+solver.iterations = 12;
+world.solver = solver;
 box([0.22, 18, 35], [-3.15, 9, 14.3], "#b8c7bd");
 box([35, 18, 0.22], [14.3, 9, -3.15], "#f1e3cb");
 box([0.09, 0.16, 28], [-3, 0.08, 11], "#8c9c8b");
