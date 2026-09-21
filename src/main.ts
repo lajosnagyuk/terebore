@@ -706,8 +706,11 @@ function showScoreToken(
     toastMotion?.cancel();
     toast.classList.add("show");
     const width = toast.offsetWidth;
-    const dockX = innerWidth < 640 ? innerWidth / 2 : 24 + width / 2;
-    const dockY = innerWidth < 640 ? innerHeight - 210 : innerHeight * 0.63;
+    const compact = innerWidth < 640;
+    const dockX = compact ? 16 + width / 2 : 24 + width / 2;
+    const dockY = compact
+      ? $("header").getBoundingClientRect().bottom + 20
+      : innerHeight * 0.63;
     toast.style.left = `${dockX}px`;
     toast.style.top = `${dockY}px`;
     const startX = THREE.MathUtils.clamp(
@@ -720,8 +723,8 @@ function showScoreToken(
       100,
       innerHeight - 150,
     );
-    const dx = startX - dockX,
-      dy = startY - dockY;
+    const dx = compact ? 0 : startX - dockX,
+      dy = compact ? 18 : startY - dockY;
     const pose = (x: number, y: number, tilt: number, scale = 1) =>
       `translate(calc(-50% + ${x}px), ${y}px) rotate(${tilt}deg) scale(${scale})`;
     toastMotion = toast.animate(
@@ -787,7 +790,7 @@ function clearGroup(matched: Ball[], originatingShot: number) {
     new THREE.MeshBasicMaterial({
       color: palette[matched[0].color].color,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.24,
       depthWrite: false,
       toneMapped: false,
     }),
@@ -855,6 +858,18 @@ function dialogOpen() {
 let drag: { id: number; width: number; height: number } | null = null;
 let lastPointerType = "mouse";
 const surface = $("#world");
+// Claim gameplay touches before an embedded browser treats a drag as scrolling.
+// Keep native touch behaviour on dialogs and buttons outside the play surface.
+for (const type of ["touchstart", "touchmove"] as const) {
+  surface.addEventListener(
+    type,
+    (event) => {
+      if (!dialogOpen() && event.cancelable) event.preventDefault();
+    },
+    { passive: false },
+  );
+}
+
 // Touch aims above the fingertip; the same mapping is used on release.
 const touchFeedback = document.createElementNS(
   "http://www.w3.org/2000/svg",
@@ -1133,7 +1148,7 @@ function frame(now: number) {
     for (const r of [...ripples]) {
       r.age += dt;
       r.mesh.scale.setScalar(0.35 + r.age * 2.5);
-      r.mesh.material.opacity = Math.max(0, 0.6 * (1 - r.age / 0.8));
+      r.mesh.material.opacity = Math.max(0, 0.24 * (1 - r.age / 0.8));
       if (r.age > 0.8) {
         room.remove(r.mesh);
         r.mesh.material.dispose();

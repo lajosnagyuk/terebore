@@ -58,11 +58,32 @@ try {
       edgeYellow = sample(210, 128);
     ctx.drawImage(renderer.domElement, 256, 0);
     const image = canvas.toDataURL();
+    scene.remove(back);
+    scene.background = new THREE.Color("white");
+    renderer.render(scene, camera);
+    const centreWhite = sample(128, 128),
+      rimWhite = sample(198, 128);
+    scene.background = new THREE.Color("black");
+    renderer.render(scene, camera);
+    const centreBlack = sample(128, 128),
+      rimBlack = sample(198, 128);
+    const contrast = (a, b) =>
+      a.reduce((sum, v, i) => sum + Math.abs(v - b[i]), 0);
+    const centreTransmission = contrast(centreWhite, centreBlack);
+    const rimTransmission = contrast(rimWhite, rimBlack);
     geometry.dispose();
     front.material.dispose();
     back.material.dispose();
     renderer.dispose();
-    return { blue, yellow, edgeBlue, edgeYellow, image };
+    return {
+      blue,
+      yellow,
+      edgeBlue,
+      edgeYellow,
+      centreTransmission,
+      rimTransmission,
+      image,
+    };
   });
   const { writeFile } = await import("node:fs/promises");
   await writeFile(
@@ -79,6 +100,10 @@ try {
   assert.ok(
     difference > 6,
     `Rear ball colour must show through front ball: ${difference}`,
+  );
+  assert.ok(
+    result.centreTransmission > result.rimTransmission * 2,
+    "Face-on colour should transmit more clearly than the milky rim",
   );
   assert.deepEqual(errors, []);
   console.log({ ...result, rearColourDifference: difference, errors });

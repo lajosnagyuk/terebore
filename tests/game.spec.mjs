@@ -301,3 +301,47 @@ test("room outlines fade through successive shells instead of drawing over the p
   expect(contrast[1]).toBeLessThan(contrast[0] * 0.5);
   expect(contrast[2]).toBeLessThan(contrast[1] * 0.4);
 });
+
+for (const height of [640, 844]) {
+  test(`portrait score token clears the hand and instructions at ${height}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height });
+    await matchingPile(page);
+    await openGame(page);
+    await expect(page.locator("#score")).toHaveText("30");
+    await page.waitForTimeout(1200);
+    const token = await page.locator(".toast").boundingBox();
+    for (const selector of [".hand-label", ".instructions", "header"]) {
+      const other = await page.locator(selector).boundingBox();
+      expect(
+        token.y + token.height <= other.y ||
+          other.y + other.height <= token.y ||
+          token.x + token.width <= other.x ||
+          other.x + other.width <= token.x,
+      ).toBe(true);
+    }
+    expect(token.x).toBeGreaterThanOrEqual(0);
+    expect(token.x + token.width).toBeLessThanOrEqual(390);
+  });
+}
+
+test("gameplay claims touch scrolling while controls retain native touches", async ({
+  page,
+}) => {
+  await openGame(page);
+  const prevented = await page.evaluate(() => {
+    const send = (selector, type) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      document.querySelector(selector).dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    return [
+      send("#world", "touchstart"),
+      send("#world", "touchmove"),
+      send("#help", "touchstart"),
+    ];
+  });
+  expect(prevented).toEqual([true, true, false]);
+  await expect(page.locator("html")).toHaveCSS("overscroll-behavior", "none");
+});

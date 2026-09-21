@@ -118,6 +118,7 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
       // Milkiness in the cavity, rich colour through the thicker shoulder.
       outgoingLight = mix(outgoingLight, cloudyTint, facing * facing * (0.22 + (1.0 - sampledDiffuseColor.r) * 0.24));
       outgoingLight *= 1.0 - shell * 0.08;
+      outgoingLight = mix(outgoingLight, cloudyTint, (1.0 - facing) * 0.10);
       outgoingLight += cloudyTint * innerWall * (0.025 + lowerLight * 0.10);
       // Light carried around the shell makes a coloured halo beneath the rim.
       float halo = exp(-pow((facing - 0.24) / 0.13, 2.0));
@@ -126,15 +127,18 @@ export function createMarbleMaterial(color: string, variant = Math.random()) {
       outgoingLight = mix(outgoingLight, vec3(1.0, 0.98, 0.94), matcapColor.a);
       float edge = smoothstep(0.065, 0.18, facing);
       outgoingLight = mix(pigment * 0.21, outgoingLight, edge);
-      outgoingLight = mix(outgoingLight, vec3(1.0,.91,.67), uCelebration*.68);
+      outgoingLight = mix(outgoingLight, vec3(1.0,.91,.67), uCelebration*.28);
       // Visual shell walls occupy 38.4% of the outer radius.
       // Optical thickness is independent of collision geometry.
       // Beer–Lambert absorption preserves a dense rim and a translucent centre.
       float innerChord = sqrt(max(0.0, facing * facing - (1.0 - .616 * .616)));
       float shellDistance = 2.0 * (facing - innerChord);
       float cloud = sampledDiffuseColor.r;
-      // Lower absorption lets neighbouring colours through the cloudy pigment.
-      float transmission = min(1.0, 1.3 * exp(-shellDistance * 1.2 * (2.1 + (1.0 - cloud) * 2.0)));
+      // Face-on transmission increases 20%; grazing views stay milky.
+      // Cap transmission so stacked shells rapidly hide distant room detail.
+      float window = smoothstep(0.30, 1.0, facing);
+      float transmission = min(0.28, 1.3 * exp(-max(shellDistance, 0.768) * 1.2 * (2.1 + (1.0 - cloud) * 2.0))
+        * mix(0.25, 1.20, window * window));
       transmission *= smoothstep(0.10, 0.36, facing);
       // Surface reflections and match flashes remain on the front of the shell.
       transmission *= 1.0 - matcapColor.a;
