@@ -1,3 +1,4 @@
+import { createCollisionMaterials } from "./collision-materials";
 import { ColorDraw } from "./color-selection";
 import { clearsTriangle, clearCornerPoints } from "./play-area";
 import { ScoreToken } from "./score-token";
@@ -68,20 +69,7 @@ const world = new CANNON.World({
 world.broadphase = new CANNON.SAPBroadphase(world);
 world.solver = new CANNON.GSSolver();
 (world.solver as CANNON.GSSolver).iterations = 12;
-const marblePhysics = new CANNON.Material("marble"),
-  roomPhysics = new CANNON.Material("room");
-world.addContactMaterial(
-  new CANNON.ContactMaterial(marblePhysics, roomPhysics, {
-    friction: 0.22,
-    restitution: 0.56,
-  }),
-);
-world.addContactMaterial(
-  new CANNON.ContactMaterial(marblePhysics, marblePhysics, {
-    friction: 0.12,
-    restitution: 0.221,
-  }),
-);
+const collisionMaterials = createCollisionMaterials(world);
 const wallBodies = new Set<number>();
 function box(
   size: number[],
@@ -108,7 +96,7 @@ function box(
   if (physical) {
     const body = new CANNON.Body({
       mass: 0,
-      material: roomPhysics,
+      material: collisionMaterials.room,
       shape: new CANNON.Box(
         new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2),
       ),
@@ -254,7 +242,7 @@ function addBall(color: number, position: THREE.Vector3, perfect = false) {
   const body = new CANNON.Body({
     mass: 1,
     shape: new CANNON.Sphere(radius),
-    material: marblePhysics,
+    material: collisionMaterials.forColor(color),
     linearDamping: 0.18,
     angularDamping: 0.48,
     sleepSpeedLimit: 0.16,

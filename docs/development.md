@@ -45,6 +45,7 @@ Open `/?stats` to display frame rate and canvas resolution. Development builds e
 | `src/score-token.ts` | Score-card merging, animation, and timer ownership |
 | `src/contact-shadows.ts`, `src/contact-texture.ts` | Cached shadow batch and owned GPU resources |
 | `src/aiming.ts` | Target selection, launch velocity, and lightweight aiming guide |
+| `src/collision-materials.ts` | Ball-pair restitution and shared room contacts |
 | `src/room-feel.ts` | Room incline, gravity, and release position |
 | `src/cadence.ts` | Throw readiness and scoring bonuses |
 | `src/matches.ts` | Connected groups of touching, same-colour balls |
@@ -65,6 +66,8 @@ The canvas starts with a 1.6-million-pixel ceiling and adapts to sustained frame
 Ball shells use thickness-dependent transparency, soft pigment variation, and baked studio reflections. Background colours show through without refraction or blur. Transparent draw ordering and the separate held-ball layer must be preserved when changing rendering.
 
 Physics uses fixed 1/90-second steps, interpolation, a sweep-and-prune broadphase, and sleeping bodies. Gameplay time advances at 1.2 times real time. The inclined room and gravity share the same coordinate system. Static collider bounds must be refreshed after positioning so broadphase collision detection remains correct.
+
+Ball-to-ball restitution starts at 0.221. A pair containing Clay applies a 0.9 multiplier; a pair containing Light applies 1.05. Each type applies once, so Clay–Clay is 10% softer, Light–Light is 5% bouncier, and Clay–Light combines both. All ball-to-room contacts retain restitution 0.56 and friction 0.22; ball-to-ball friction stays 0.12. Perfects use their primary colour’s physical material.
 
 The aiming guide is deliberately approximate: it uses the launch velocity and simple room reflections, suggests at most four bounces, and stops near the rail or pile. It does not run another physics world or predict matching outcomes. Input changes refresh it once per frame; a stationary aim is reused while the pile sleeps.
 
