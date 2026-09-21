@@ -15,7 +15,7 @@ The fading dots suggest a few possible bounces. They stop near the wooden rail o
 - **Keyboard:** arrow keys to aim, Space to throw, Escape to cancel aiming.
 - **Sound:** enable the speaker button for soft collision and match sounds.
 
-Each matched ball earns 10 points, with bonuses for larger groups, wall-assisted matches, and chain reactions. Your personal best is saved in your browser when local storage is available. Reset starts a fresh round without clearing that best score.
+Each matched ball earns 10 points, with bonuses for larger groups, wall-assisted matches, and chain reactions. Clearing the inside triangle earns 25 extra points; balls outside the rail do not count against it. Your personal best is saved in your browser when local storage is available. Reset starts a fresh round without clearing that best score.
 
 ## Run locally
 

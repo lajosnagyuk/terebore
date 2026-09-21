@@ -1,3 +1,4 @@
+import { clearsTriangle, clearCornerPoints } from "./play-area";
 import { ScoreToken } from "./score-token";
 import { ContactShadows } from "./contact-shadows";
 import { GameAudio } from "./audio";
@@ -536,7 +537,15 @@ function clearGroup(matched: Ball[], originatingShot: number) {
   const screen = room
     .localToWorld(centre.clone().add(new THREE.Vector3(0, 1.1, 0)))
     .project(camera);
-  const points = clearScore(matched.length, banked, chain);
+  const clearedCorner = clearsTriangle(
+    matched.map((ball) => ball.body.position),
+    balls
+      .filter((ball) => !matched.includes(ball))
+      .map((ball) => ball.body.position),
+  );
+  const points =
+    clearScore(matched.length, banked, chain) +
+    (clearedCorner ? clearCornerPoints : 0);
 
   score += points;
   $("#score").textContent = String(score);
@@ -564,7 +573,7 @@ function clearGroup(matched: Ball[], originatingShot: number) {
   audio.tone(523, 0.045, 0.6);
   clearTimeout(chordTimer);
   chordTimer = setTimeout(() => audio.tone(784, 0.025, 0.7), 100);
-  scoreToken.show(points, matched.length, banked, screen, chain);
+  scoreToken.show(points, matched.length, banked, screen, chain, clearedCorner);
 }
 function checkMatches() {
   const groups = findMatches(

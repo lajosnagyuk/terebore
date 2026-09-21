@@ -345,3 +345,25 @@ test("gameplay claims touch scrolling while controls retain native touches", asy
   expect(prevented).toEqual([true, true, false]);
   await expect(page.locator("html")).toHaveCSS("overscroll-behavior", "none");
 });
+
+for (const support of ["none", "outside"]) {
+  test(`clearing the corner awards 25 once with ${support} remaining support`, async ({
+    page,
+  }) => {
+    await matchingPile(page, support);
+    await openGame(page);
+    await expect(page.locator("#score")).toHaveText("55");
+    await expect(page.locator("#points")).toHaveText("+55");
+    await expect(page.locator("#message")).toHaveText(
+      "CLEAR CORNER · +25 BONUS",
+    );
+    await expect(page.locator("#best")).toHaveText("55");
+    expect((await state(page)).balls).toHaveLength(support === "none" ? 0 : 1);
+    await page.waitForTimeout(1000);
+    await expect(page.locator("#score")).toHaveText("55");
+    await reset(page);
+    await expect(page.locator("#score")).toHaveText("0");
+    // A new round may earn the bonus again.
+    await expect(page.locator("#score")).toHaveText("55");
+  });
+}

@@ -1,3 +1,4 @@
+import { clearCornerPoints } from "./play-area";
 import { MathUtils } from "three";
 const { clamp } = MathUtils;
 
@@ -8,6 +9,7 @@ export class ScoreToken {
   private totalPoints = 0;
   private marbles = 0;
   private banked = false;
+  private cornerBonus = 0;
   constructor(
     private readonly element: HTMLElement,
     private readonly points: HTMLElement,
@@ -20,6 +22,7 @@ export class ScoreToken {
     this.element.classList.remove("show");
     this.totalPoints = this.marbles = 0;
     this.banked = false;
+    this.cornerBonus = 0;
   }
   show(
     points: number,
@@ -27,14 +30,20 @@ export class ScoreToken {
     banked: boolean,
     screen: { x: number; y: number },
     chain: number,
+    clearedCorner = false,
   ) {
     const toast = this.element;
     const active = toast.classList.contains("show");
     this.totalPoints = active ? this.totalPoints + points : points;
     this.marbles = active ? this.marbles + count : count;
     this.banked = (active && this.banked) || banked;
+    this.cornerBonus =
+      (active ? this.cornerBonus : 0) + (clearedCorner ? clearCornerPoints : 0);
     this.points.textContent = `+${this.totalPoints}`;
-    this.message.textContent = `${this.marbles} TOGETHER${this.banked ? " · WALL BONUS" : chain > 1 ? " · CHAIN " + chain : ""}`;
+    this.message.textContent =
+      this.cornerBonus > 0
+        ? `CLEAR CORNER · +${this.cornerBonus} BONUS`
+        : `${this.marbles} TOGETHER${this.banked ? " · WALL BONUS" : chain > 1 ? " · CHAIN " + chain : ""}`;
     clearTimeout(this.timer);
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!active) {

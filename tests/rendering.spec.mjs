@@ -121,3 +121,22 @@ test("audio voices disconnect after playing and muted audio allocates none", asy
   });
   expect(result).toEqual({ mutedVoices: 0, created: 4, remaining: 0 });
 });
+
+test("consecutive corner bonuses remain accurate in a merged score card", async ({
+  page,
+}) => {
+  await openGame(page);
+  await page.evaluate(async () => {
+    const { ScoreToken } = await import("/src/score-token.ts");
+    const token = new ScoreToken(
+      document.querySelector(".toast"),
+      document.querySelector("#points"),
+      document.querySelector("#message"),
+      document.querySelector("header"),
+    );
+    token.show(55, 3, false, { x: 0, y: 0 }, 1, true);
+    token.show(55, 3, false, { x: 0, y: 0 }, 1, true);
+  });
+  await expect(page.locator("#points")).toHaveText("+110");
+  await expect(page.locator("#message")).toHaveText("CLEAR CORNER · +50 BONUS");
+});
